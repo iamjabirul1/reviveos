@@ -127,6 +127,10 @@ export default function Landing() {
             <Zap className="h-5 w-5 text-primary" />
             <span className="font-semibold">ReviveOS</span>
           </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          </div>
           <p className="text-sm text-muted-foreground">© 2026 ReviveOS. All rights reserved.</p>
         </div>
       </footer>
