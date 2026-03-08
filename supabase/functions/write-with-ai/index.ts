@@ -41,7 +41,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { workspace_id, playbook_type, tone, cta, channel, context } = await req.json();
+    const body = await req.json();
+    const { workspace_id, playbook_type, tone, cta, channel, context } = body;
+
+    // Rate limit check
+    if (workspace_id) {
+      const { data: rateLimit } = await supabase.rpc("check_ai_rate_limit", {
+        _workspace_id: workspace_id,
+        _function_name: "write-with-ai",
+      });
+      if (rateLimit && !rateLimit.allowed) {
+        return new Response(JSON.stringify({
+          error: "Daily AI usage limit reached",
+          daily_limit: rateLimit.daily_limit,
+          used_today: rateLimit.used_today,
+          plan: rateLimit.plan,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
 
     // Fetch business context from workspace
     let businessContext = "";
