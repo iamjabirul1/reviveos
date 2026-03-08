@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { scoreLead } from '@/lib/scoring';
 import { useToast } from '@/hooks/use-toast';
 
