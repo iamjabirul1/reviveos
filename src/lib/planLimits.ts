@@ -3,6 +3,7 @@ export interface PlanLimits {
   maxWorkspaces: number;
   maxCampaigns: number | 'unlimited';
   maxPlaybooks: number | 'unlimited';
+  maxAICallsPerDay: number;
   channels: ('email' | 'sms')[];
   customPlaybooks: boolean;
   bulkApprovals: boolean;
@@ -22,6 +23,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxWorkspaces: 1,
     maxCampaigns: 1,
     maxPlaybooks: 3,
+    maxAICallsPerDay: 10,
     channels: ['email'],
     customPlaybooks: false,
     bulkApprovals: false,
@@ -39,6 +41,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxWorkspaces: 1,
     maxCampaigns: 3,
     maxPlaybooks: 3,
+    maxAICallsPerDay: 50,
     channels: ['email'],
     customPlaybooks: false,
     bulkApprovals: false,
@@ -56,6 +59,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxWorkspaces: 1,
     maxCampaigns: 'unlimited',
     maxPlaybooks: 7,
+    maxAICallsPerDay: 500,
     channels: ['email', 'sms'],
     customPlaybooks: true,
     bulkApprovals: true,
@@ -73,6 +77,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxWorkspaces: 3,
     maxCampaigns: 'unlimited',
     maxPlaybooks: 'unlimited',
+    maxAICallsPerDay: 2000,
     channels: ['email', 'sms'],
     customPlaybooks: true,
     bulkApprovals: true,

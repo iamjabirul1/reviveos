@@ -62,6 +62,7 @@ export default function SettingsPage() {
   const [leadCount, setLeadCount] = useState(0);
   const [campaignCount, setCampaignCount] = useState(0);
   const [playbookCount, setPlaybookCount] = useState(0);
+  const [aiUsageToday, setAiUsageToday] = useState(0);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
@@ -74,13 +75,17 @@ export default function SettingsPage() {
 
   async function fetchData() {
     if (!currentWorkspace || !user) return;
-    const [suppRes, actRes, subRes, leadsRes, campRes, pbRes] = await Promise.all([
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+
+    const [suppRes, actRes, subRes, leadsRes, campRes, pbRes, aiRes] = await Promise.all([
       supabase.from('suppressions').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: false }),
       supabase.from('activity_logs').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: false }).limit(50),
       supabase.from('subscriptions').select('*').eq('workspace_id', currentWorkspace.id).eq('user_id', user.id).order('created_at', { ascending: false }).limit(1),
       supabase.from('leads').select('id', { count: 'exact', head: true }).eq('workspace_id', currentWorkspace.id),
       supabase.from('campaigns').select('id', { count: 'exact', head: true }).eq('workspace_id', currentWorkspace.id),
       supabase.from('playbooks').select('id', { count: 'exact', head: true }).eq('workspace_id', currentWorkspace.id),
+      supabase.from('ai_usage_log').select('id', { count: 'exact', head: true }).eq('workspace_id', currentWorkspace.id).gte('created_at', todayStart.toISOString()),
     ]);
     setSuppressions((suppRes.data ?? []) as Suppression[]);
     setActivityLogs((actRes.data ?? []) as ActivityLog[]);
@@ -89,6 +94,7 @@ export default function SettingsPage() {
     setLeadCount(leadsRes.count ?? 0);
     setCampaignCount(campRes.count ?? 0);
     setPlaybookCount(pbRes.count ?? 0);
+    setAiUsageToday(aiRes.count ?? 0);
     setLoading(false);
   }
 
@@ -187,6 +193,11 @@ export default function SettingsPage() {
       label: 'Playbooks',
       current: playbookCount,
       max: limits.maxPlaybooks,
+    },
+    {
+      label: 'AI Calls (today)',
+      current: aiUsageToday,
+      max: limits.maxAICallsPerDay,
     },
   ];
 
