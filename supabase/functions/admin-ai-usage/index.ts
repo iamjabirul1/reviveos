@@ -68,11 +68,11 @@ Deno.serve(async (req) => {
     // Get all workspaces
     const { data: workspaces } = await supabase
       .from("workspaces")
-      .select("id, name, plan, owner_user_id");
+      .select("id, name, plan, owner_user_id, ai_suspended, ai_suspended_at, ai_suspended_reason");
 
-    const wsMap: Record<string, { name: string; plan: string }> = {};
+    const wsMap: Record<string, { name: string; plan: string; ai_suspended: boolean; ai_suspended_reason: string | null }> = {};
     (workspaces ?? []).forEach((ws) => {
-      wsMap[ws.id] = { name: ws.name, plan: ws.plan };
+      wsMap[ws.id] = { name: ws.name, plan: ws.plan, ai_suspended: ws.ai_suspended, ai_suspended_reason: ws.ai_suspended_reason };
     });
 
     // Aggregate per workspace
