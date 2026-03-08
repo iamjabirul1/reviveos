@@ -8,7 +8,8 @@ import {
   Zap, ArrowRight, BarChart3, Shield, Clock, Users, CheckCircle,
   Star, TrendingUp, MessageSquare, CalendarCheck, DollarSign,
   ChevronDown, Mail, Phone, Sparkles, Lock, Target, Eye,
-  ArrowUpRight, Play, Quote, Check, X,
+  ArrowUpRight, Play, Quote, Check, X, Gift, Award, Headphones,
+  FileText, Rocket, ShieldCheck, Heart,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PayPalPricingProvider, PayPalSubscribeButton } from '@/components/PayPalPricing';
