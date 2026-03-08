@@ -479,6 +479,8 @@ export default function Landing() {
         </section>
 
         {/* Pricing */}
+        {paypalClientId ? (
+        <PayPalPricingProvider clientId={paypalClientId}>
         <section id="pricing" className="py-20 border-t">
           <div className="container mx-auto px-4 max-w-5xl">
             <motion.div
