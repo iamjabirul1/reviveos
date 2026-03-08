@@ -79,7 +79,7 @@ Respond with ONLY valid JSON in this exact format:
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Cerebras API error [${response.status}]:`, errorText);
+        console.error(`Cerebras API error [${response.status}] for model gpt-oss-120b:`, errorText);
         
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
