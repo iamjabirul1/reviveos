@@ -1,11 +1,13 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap, LogOut
+  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -29,7 +31,19 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .then(({ data }) => setIsAdmin((data ?? []).length > 0));
+    }
+  }, [user]);
 
   return (
     <Sidebar collapsible="icon">
@@ -78,6 +92,20 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/app/admin"
+                      className="hover:bg-sidebar-accent/50"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <Shield className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
