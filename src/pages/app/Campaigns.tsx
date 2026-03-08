@@ -58,29 +58,57 @@ export default function CampaignsPage() {
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      // Generate mock messages for top leads
-      const { data: topLeads } = await supabase.from('leads').select('id')
-        .eq('workspace_id', currentWorkspace.id).eq('revival_bucket', 'revive_now').limit(10);
+      // Fetch full lead data for AI generation
+      const { data: topLeads } = await supabase.from('leads').select('*')
+        .eq('workspace_id', currentWorkspace.id).eq('revival_bucket', 'revive_now' as any).limit(10);
       
       if (topLeads && topLeads.length > 0) {
         const { data: newCampaign } = await supabase.from('campaigns').select('id')
           .eq('workspace_id', currentWorkspace.id).eq('name', name).limit(1).single();
         
         if (newCampaign) {
-          const messages = topLeads.map(lead => ({
-            workspace_id: currentWorkspace.id,
-            lead_id: lead.id,
-            campaign_id: newCampaign.id,
-            channel: 'email' as const,
-            subject: `Re: Quick question about your goals`,
-            body: `Hi there,\n\nI noticed we connected a while back but didn't get the chance to continue our conversation. I wanted to reach out because I think there might be a great fit here.\n\nWould you be open to a quick 15-minute call this week?\n\nBest regards`,
-            ai_rationale: 'Lead scored high for revival based on recent activity and timing signals.',
-          }));
-          await supabase.from('messages').insert(messages);
+          toast({ title: 'Generating AI messages...', description: 'Using Cerebras AI to draft personalized messages' });
+          
+          // Call edge function for AI generation
+          const { data: aiResult, error: aiError } = await supabase.functions.invoke('generate-messages', {
+            body: {
+              leads: topLeads,
+              playbook_type: playbookType,
+              tone: 'friendly',
+              cta: 'book_call',
+            },
+          });
+
+          if (aiError || !aiResult?.messages) {
+            console.error('AI generation failed, using fallbacks:', aiError);
+            // Fallback to template messages
+            const messages = topLeads.map(lead => ({
+              workspace_id: currentWorkspace.id,
+              lead_id: lead.id,
+              campaign_id: newCampaign.id,
+              channel: 'email' as const,
+              subject: `Re: Quick question, ${lead.first_name || 'there'}`,
+              body: `Hi ${lead.first_name || 'there'},\n\nI noticed we connected a while back but didn't get the chance to continue our conversation. I wanted to reach out because I think there might still be a great fit here.\n\nWould you be open to a quick 15-minute call this week?\n\nBest regards`,
+              ai_rationale: 'Template message — AI generation was unavailable.',
+            }));
+            await supabase.from('messages').insert(messages);
+          } else {
+            // Insert AI-generated messages
+            const messages = aiResult.messages.map((msg: any) => ({
+              workspace_id: currentWorkspace.id,
+              lead_id: msg.lead_id,
+              campaign_id: newCampaign.id,
+              channel: 'email' as const,
+              subject: msg.email_subject,
+              body: msg.email_body,
+              ai_rationale: msg.rationale,
+            }));
+            await supabase.from('messages').insert(messages);
+          }
         }
       }
 
-      toast({ title: 'Campaign created', description: `${count ?? 0} leads targeted` });
+      toast({ title: 'Campaign created', description: `${count ?? 0} leads targeted with AI-generated messages` });
       setOpen(false);
       setName('');
       fetchCampaigns();
