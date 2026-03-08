@@ -36,7 +36,9 @@ export default function LeadsPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddLeads } = usePlanLimits();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeadCount, setTotalLeadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [bucketFilter, setBucketFilter] = useState<string>('all');
@@ -45,6 +47,20 @@ export default function LeadsPage() {
   const [enriching, setEnriching] = useState(false);
   const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
   const pageSize = 25;
+
+  useEffect(() => {
+    if (currentWorkspace) {
+      fetchLeads();
+      fetchTotalCount();
+    }
+  }, [currentWorkspace, bucketFilter, page]);
+
+  async function fetchTotalCount() {
+    if (!currentWorkspace) return;
+    const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true })
+      .eq('workspace_id', currentWorkspace.id);
+    setTotalLeadCount(count ?? 0);
+  }
 
   useEffect(() => {
     if (currentWorkspace) fetchLeads();
