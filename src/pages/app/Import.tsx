@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, CheckCircle, AlertCircle, FileUp, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 const LEAD_FIELDS = [
   { key: 'first_name', label: 'First Name' },
@@ -39,6 +41,7 @@ export default function ImportPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddLeads } = usePlanLimits();
   const [step, setStep] = useState<Step>('upload');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<Record<string, string>[]>([]);
@@ -48,6 +51,15 @@ export default function ImportPage() {
   const [aiReasoning, setAiReasoning] = useState<string>('');
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
   const [notesColumns, setNotesColumns] = useState<string[]>([]);
+  const [currentLeadCount, setCurrentLeadCount] = useState(0);
+
+  useEffect(() => {
+    if (currentWorkspace) {
+      supabase.from('leads').select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspace.id)
+        .then(({ count }) => setCurrentLeadCount(count ?? 0));
+    }
+  }, [currentWorkspace]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -325,7 +337,13 @@ export default function ImportPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Import Leads</h1>
+      {!canAddLeads(currentLeadCount) && (
+        <LimitReached resource="Leads" current={currentLeadCount} max={limits.maxLeads} upgradePlan={upgradePlan} />
+      )}
+      <div>
+        <h1 className="text-2xl font-bold">Import Leads</h1>
+        <p className="text-sm text-muted-foreground">{currentLeadCount.toLocaleString()} / {limits.maxLeads.toLocaleString()} leads used</p>
+      </div>
 
       {step === 'upload' && (
         <Card>

@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { scoreLead } from '@/lib/scoring';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
@@ -34,7 +36,9 @@ export default function LeadsPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddLeads } = usePlanLimits();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeadCount, setTotalLeadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [bucketFilter, setBucketFilter] = useState<string>('all');
@@ -43,6 +47,20 @@ export default function LeadsPage() {
   const [enriching, setEnriching] = useState(false);
   const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
   const pageSize = 25;
+
+  useEffect(() => {
+    if (currentWorkspace) {
+      fetchLeads();
+      fetchTotalCount();
+    }
+  }, [currentWorkspace, bucketFilter, page]);
+
+  async function fetchTotalCount() {
+    if (!currentWorkspace) return;
+    const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true })
+      .eq('workspace_id', currentWorkspace.id);
+    setTotalLeadCount(count ?? 0);
+  }
 
   useEffect(() => {
     if (currentWorkspace) fetchLeads();
@@ -181,8 +199,14 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-6">
+      {!canAddLeads(totalLeadCount) && (
+        <LimitReached resource="Leads" current={totalLeadCount} max={limits.maxLeads} upgradePlan={upgradePlan} />
+      )}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Leads</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Leads</h1>
+          <p className="text-sm text-muted-foreground">{totalLeadCount.toLocaleString()} / {limits.maxLeads.toLocaleString()} leads used</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={enrichAllLeads} disabled={enriching}>
             {enriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}

@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Slider } from '@/components/ui/slider';
 import { Megaphone, Plus, Play, Pause, CheckCircle, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 interface Campaign {
   id: string;
@@ -37,6 +39,7 @@ export default function CampaignsPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddCampaign, canUseChannel } = usePlanLimits();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -215,11 +218,27 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
+      {!canAddCampaign(campaigns.length) && (
+        <LimitReached resource="Campaigns" current={campaigns.length} max={limits.maxCampaigns} upgradePlan={upgradePlan} />
+      )}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Campaigns</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <div>
+          <h1 className="text-2xl font-bold">Campaigns</h1>
+          <p className="text-sm text-muted-foreground">
+            {campaigns.length}{limits.maxCampaigns !== 'unlimited' ? ` / ${limits.maxCampaigns}` : ''} campaigns
+          </p>
+        </div>
+        <Dialog open={open} onOpenChange={(o) => {
+          if (o && !canAddCampaign(campaigns.length)) {
+            toast({ title: 'Campaign limit reached', description: 'Upgrade your plan to create more campaigns.', variant: 'destructive' });
+            return;
+          }
+          setOpen(o);
+        }}>
           <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> New Campaign</Button>
+            <Button disabled={!canAddCampaign(campaigns.length)}>
+              <Plus className="mr-2 h-4 w-4" /> New Campaign
+            </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Create Campaign</DialogTitle></DialogHeader>
