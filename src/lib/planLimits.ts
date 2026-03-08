@@ -77,6 +77,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxWorkspaces: 3,
     maxCampaigns: 'unlimited',
     maxPlaybooks: 'unlimited',
+    maxAICallsPerDay: 2000,
     channels: ['email', 'sms'],
     customPlaybooks: true,
     bulkApprovals: true,
