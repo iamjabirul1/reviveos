@@ -526,22 +526,25 @@ export default function Landing() {
               {[
                 {
                   name: 'Starter',
-                  desc: 'For solo founders, coaches, and service businesses who want to revive stale leads fast.',
+                  desc: 'For solo founders and service businesses who want to revive stale leads fast.',
                   price: { monthly: 39, annual: 31 },
                   cta: 'Start Reviving',
                   popular: false,
                   features: [
                     '1,000 leads stored',
-                    '3 active campaigns',
                     'CSV upload import',
                     'AI stale-lead scoring',
-                    'Email reactivation campaigns',
+                    '1-click reactivation campaigns',
+                    'Email campaign generation',
                     '3 built-in playbooks',
                     'Basic approval inbox',
                     'Booking link insertion',
                     'Basic dashboard',
+                    'Email support',
                   ],
                   excluded: ['SMS channel', 'Custom playbooks', 'CRM sync'],
+                  bonus: 'Revival Script Pack',
+                  guarantee: 'Get your first campaign live fast or we\'ll help you personally.',
                 },
                 {
                   name: 'Growth',
@@ -564,6 +567,8 @@ export default function Landing() {
                     'Priority support',
                   ],
                   excluded: [],
+                  bonus: 'No-Show Rescue + Closed-Lost Comeback Playbooks',
+                  guarantee: 'Launch your first recovery engine in 7 days or we help set it up.',
                 },
                 {
                   name: 'Scale',
@@ -584,6 +589,8 @@ export default function Landing() {
                     'Onboarding help',
                   ],
                   excluded: [],
+                  bonus: 'Agency Reporting Kit + Multi-Client SOP',
+                  guarantee: 'We help you get your first client or workspace live fast.',
                 },
               ].map((plan, i) => (
                 <motion.div key={i} variants={fadeUp}>
@@ -618,12 +625,12 @@ export default function Landing() {
                         </div>
                       ) : (
                         <Link to="/signup">
-                          <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
+                          <Button className={`w-full mb-6`} variant={plan.popular ? 'default' : 'outline'}>
                             {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </Link>
                       )}
-                      <div className="space-y-3">
+                      <div className="space-y-3 mb-5">
                         {plan.features.map((f, j) => (
                           <div key={j} className="flex items-start gap-2 text-sm">
                             <Check className="h-4 w-4 text-success shrink-0 mt-0.5" />
@@ -636,6 +643,16 @@ export default function Landing() {
                             <span className="line-through">{f}</span>
                           </div>
                         ))}
+                      </div>
+                      <div className="border-t pt-4 mt-4 space-y-3">
+                        <div className="flex items-start gap-2 text-sm">
+                          <Gift className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                          <span><strong>Bonus:</strong> {plan.bonus}</span>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm">
+                          <ShieldCheck className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground text-xs">{plan.guarantee}</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
