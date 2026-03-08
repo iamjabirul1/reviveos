@@ -327,6 +327,109 @@ export default function LeadsPage() {
                   <p className="text-sm text-muted-foreground">Suggested CTA</p>
                   <p className="capitalize">{selectedLead.suggested_cta?.replace('_', ' ') ?? '—'}</p>
                 </div>
+
+                {/* AI Enrichment Section */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" /> AI Research
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => enrichSingleLead(selectedLead)}
+                      disabled={enrichingLead === selectedLead.id}
+                    >
+                      {enrichingLead === selectedLead.id ? (
+                        <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Researching...</>
+                      ) : (selectedLead as any).enriched_at ? 'Re-enrich' : 'Enrich'}
+                    </Button>
+                  </div>
+
+                  {(selectedLead as any).enrichment_json ? (
+                    <div className="space-y-3">
+                      {(() => {
+                        const e = (selectedLead as any).enrichment_json;
+                        return (
+                          <>
+                            <Card className="bg-muted/50">
+                              <CardContent className="pt-4 space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground">Company Summary</p>
+                                <p className="text-sm">{e.company_summary}</p>
+                              </CardContent>
+                            </Card>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Industry</p>
+                                <p className="text-sm font-medium">{e.industry}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Size</p>
+                                <p className="text-sm font-medium capitalize">{e.company_size_estimate}</p>
+                              </div>
+                            </div>
+                            {e.pain_points?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Pain Points</p>
+                                <ul className="text-sm space-y-1">
+                                  {e.pain_points.map((p: string, i: number) => (
+                                    <li key={i} className="flex gap-2"><span className="text-destructive">•</span> {p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {e.personalization_hooks?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Personalization Hooks</p>
+                                <ul className="text-sm space-y-1">
+                                  {e.personalization_hooks.map((h: string, i: number) => (
+                                    <li key={i} className="flex gap-2"><span className="text-primary">💡</span> {h}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <Card className="bg-primary/5 border-primary/20">
+                              <CardContent className="pt-4">
+                                <p className="text-xs font-medium text-primary mb-1">Best Outreach Angle</p>
+                                <p className="text-sm font-medium">{e.best_outreach_angle}</p>
+                              </CardContent>
+                            </Card>
+                            {e.timing_signal && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Timing Signal</p>
+                                <p className="text-sm">{e.timing_signal}</p>
+                              </div>
+                            )}
+                            {e.decision_maker_profile && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Decision-Maker Profile</p>
+                                <p className="text-sm">{e.decision_maker_profile}</p>
+                              </div>
+                            )}
+                            {e.recent_trends?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Industry Trends</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {e.recent_trends.map((t: string, i: number) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {(selectedLead as any).enriched_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Enriched {new Date((selectedLead as any).enriched_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Not yet enriched. Click "Enrich" to run AI research on this lead's company.</p>
+                  )}
+                </div>
+
                 <div>
                   <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="text-sm">{selectedLead.notes ?? 'None'}</p>
