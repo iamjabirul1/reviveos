@@ -99,9 +99,13 @@ export default function PlaybooksPage() {
   }
 
   async function createPlaybook() {
-    if (!currentWorkspace || !name) return;
+    if (!currentWorkspace || !name) {
+      toast({ title: 'Error', description: !name ? 'Please enter a playbook name' : 'No workspace selected', variant: 'destructive' });
+      return;
+    }
     const channels = [...new Set(sequence.map(s => s.channel))];
-    const { error } = await supabase.from('playbooks').insert({
+    console.log('Creating playbook:', { workspace_id: currentWorkspace.id, name, type, tone, cta, channels, sequence });
+    const { data, error } = await supabase.from('playbooks').insert({
       workspace_id: currentWorkspace.id,
       name,
       type,
@@ -109,11 +113,12 @@ export default function PlaybooksPage() {
       cta,
       channels: channels as any,
       sequence_json: sequence as any,
-    } as any);
+    } as any).select();
+    console.log('Playbook insert result:', { data, error });
     if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error creating playbook', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Playbook created' });
+      toast({ title: 'Playbook created', description: `"${name}" is ready to use` });
       setOpen(false);
       setName('');
       setSequence(DEFAULT_SEQUENCE);
