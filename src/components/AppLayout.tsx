@@ -10,8 +10,8 @@ export default function AppLayout() {
   const { signOut, user } = useAuth();
   const { currentWorkspace } = useWorkspace();
 
-  const isSuspended = (currentWorkspace as any)?.ai_suspended === true;
-  const suspendedReason = (currentWorkspace as any)?.ai_suspended_reason;
+  const isSuspended = currentWorkspace?.ai_suspended === true;
+  const suspendedReason = currentWorkspace?.ai_suspended_reason;
 
   return (
     <SidebarProvider>
@@ -38,8 +38,8 @@ export default function AppLayout() {
                 <p className="text-sm text-destructive/80 mt-0.5">
                   {suspendedReason || 'Your AI features have been temporarily suspended.'}
                   {' '}Please contact{' '}
-                  <a href="mailto:support@leadgenie.app" className="underline font-medium text-destructive hover:text-destructive/70">
-                    support@leadgenie.app
+                  <a href="mailto:support@reviveos.com" className="underline font-medium text-destructive hover:text-destructive/70">
+                    support@reviveos.com
                   </a>
                   {' '}for assistance.
                 </p>

@@ -10,6 +10,9 @@ interface Workspace {
   created_at: string;
   business_context?: Record<string, any> | null;
   onboarding_completed?: boolean;
+  ai_suspended?: boolean;
+  ai_suspended_at?: string | null;
+  ai_suspended_reason?: string | null;
 }
 
 interface WorkspaceContextType {

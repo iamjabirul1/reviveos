@@ -1,0 +1,1 @@
+ALTER TABLE public.notification_preferences ADD CONSTRAINT notification_preferences_user_workspace_unique UNIQUE (user_id, workspace_id);

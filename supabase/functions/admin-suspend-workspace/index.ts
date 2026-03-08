@@ -24,15 +24,14 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !authUser) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const adminUserId = claimsData.claims.sub as string;
+    const adminUserId = authUser.id;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -96,7 +95,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "LeadGenie <notifications@updates.leadgenie.app>",
+              from: "ReviveOS <notifications@updates.reviveos.com>",
               to: [ownerEmail],
               subject: "⚠️ Your AI access has been suspended",
               html: `
@@ -125,12 +124,12 @@ Deno.serve(async (req) => {
                     <p style="font-size: 15px; color: #0369a1; margin: 0 0 12px 0;">
                       <strong>Need help? Contact our support team to resolve this.</strong>
                     </p>
-                    <a href="mailto:support@leadgenie.app" style="display: inline-block; background: #0284c7; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                    <a href="mailto:support@reviveos.com" style="display: inline-block; background: #0284c7; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
                       Contact Support
                     </a>
                   </div>
                   <p style="font-size: 12px; color: #999; margin-top: 24px; text-align: center;">
-                    If you believe this was done in error, reply to this email or contact support@leadgenie.app
+                    If you believe this was done in error, reply to this email or contact support@reviveos.com
                   </p>
                 </div>
               `,
@@ -172,7 +171,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "LeadGenie <notifications@updates.leadgenie.app>",
+              from: "ReviveOS <notifications@updates.reviveos.com>",
               to: [ownerEmail],
               subject: "✅ Your AI access has been restored",
               html: `
