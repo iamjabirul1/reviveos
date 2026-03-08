@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,10 @@ import {
   ChevronDown, Mail, Phone, Sparkles, Lock, Target, Eye,
   ArrowUpRight, Play, Quote, Check, X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { PayPalPricingProvider, PayPalSubscribeButton } from '@/components/PayPalPricing';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -27,8 +30,53 @@ const scaleIn = {
 };
 
 export default function Landing() {
+  const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [paypalPlans, setPaypalPlans] = useState<any[]>([]);
+  const [setupLoading, setSetupLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const { data, error } = await supabase.functions.invoke('paypal-config');
+        if (!error && data) {
+          setPaypalClientId(data.clientId);
+          setPaypalPlans(data.plans || []);
+        }
+      } catch (err) {
+        console.error('Failed to load PayPal config:', err);
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  const handleSetupPlans = async () => {
+    setSetupLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in first to setup PayPal plans');
+        navigate('/login');
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('paypal-setup');
+      if (error) throw error;
+      toast.success('PayPal plans created successfully!');
+      // Refresh config
+      const { data: config } = await supabase.functions.invoke('paypal-config');
+      if (config) {
+        setPaypalClientId(config.clientId);
+        setPaypalPlans(config.plans || []);
+      }
+    } catch (err) {
+      console.error('Setup error:', err);
+      toast.error('Failed to create PayPal plans. Check console for details.');
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   return (
     <>
@@ -431,6 +479,8 @@ export default function Landing() {
         </section>
 
         {/* Pricing */}
+        {paypalClientId ? (
+        <PayPalPricingProvider clientId={paypalClientId}>
         <section id="pricing" className="py-20 border-t">
           <div className="container mx-auto px-4 max-w-5xl">
             <motion.div
@@ -547,11 +597,22 @@ export default function Landing() {
                           </p>
                         )}
                       </div>
-                      <Link to="/signup">
-                        <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
-                          {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
+                      {paypalClientId && paypalPlans.length > 0 ? (
+                        <div className="mb-6">
+                          <PayPalSubscribeButton
+                            planName={plan.name}
+                            billingCycle={billingCycle}
+                            plans={paypalPlans}
+                            onSetupRequired={handleSetupPlans}
+                          />
+                        </div>
+                      ) : (
+                        <Link to="/signup">
+                          <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
+                            {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
                       <div className="space-y-3">
                         {plan.features.map((f, j) => (
                           <div key={j} className="flex items-start gap-2 text-sm">
@@ -602,6 +663,30 @@ export default function Landing() {
             </motion.div>
           </div>
         </section>
+        </PayPalPricingProvider>
+        ) : (
+        <section id="pricing" className="py-20 border-t">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.div variants={fadeUp}>
+                <Badge variant="outline" className="mb-4">Simple Pricing</Badge>
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                One recovered deal pays for a year
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg mb-8">
+                Loading pricing...
+              </motion.p>
+            </motion.div>
+          </div>
+        </section>
+        )}
 
         {/* FAQ */}
         <section id="faq" className="py-20 border-t bg-muted/30">
