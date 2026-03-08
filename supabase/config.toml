@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.admin-ai-usage]
 verify_jwt = false
+
+[functions.admin-suspend-workspace]
+verify_jwt = false

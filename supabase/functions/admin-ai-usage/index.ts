@@ -68,11 +68,11 @@ Deno.serve(async (req) => {
     // Get all workspaces
     const { data: workspaces } = await supabase
       .from("workspaces")
-      .select("id, name, plan, owner_user_id");
+      .select("id, name, plan, owner_user_id, ai_suspended, ai_suspended_at, ai_suspended_reason");
 
-    const wsMap: Record<string, { name: string; plan: string }> = {};
+    const wsMap: Record<string, { name: string; plan: string; ai_suspended: boolean; ai_suspended_reason: string | null }> = {};
     (workspaces ?? []).forEach((ws) => {
-      wsMap[ws.id] = { name: ws.name, plan: ws.plan };
+      wsMap[ws.id] = { name: ws.name, plan: ws.plan, ai_suspended: ws.ai_suspended, ai_suspended_reason: ws.ai_suspended_reason };
     });
 
     // Aggregate per workspace
@@ -95,11 +95,29 @@ Deno.serve(async (req) => {
         workspace_id: wsId,
         workspace_name: wsMap[wsId]?.name || "Unknown",
         plan: wsMap[wsId]?.plan || "free",
+        ai_suspended: wsMap[wsId]?.ai_suspended || false,
+        ai_suspended_reason: wsMap[wsId]?.ai_suspended_reason || null,
         total_calls: stats.total,
         by_function: stats.by_function,
         by_day: stats.by_day,
       }))
       .sort((a, b) => b.total_calls - a.total_calls);
+
+    // Also include workspaces with no usage but that are suspended
+    const suspendedNoUsage = (workspaces ?? [])
+      .filter((ws) => ws.ai_suspended && !perWorkspace[ws.id])
+      .map((ws) => ({
+        workspace_id: ws.id,
+        workspace_name: ws.name,
+        plan: ws.plan,
+        ai_suspended: true,
+        ai_suspended_reason: ws.ai_suspended_reason,
+        total_calls: 0,
+        by_function: {},
+        by_day: {},
+      }));
+
+    const allWorkspaceStats = [...workspaceStats, ...suspendedNoUsage];
 
     // Daily totals across all workspaces
     const dailyTotals: Record<string, number> = {};
@@ -118,7 +136,7 @@ Deno.serve(async (req) => {
       total_calls: (logs ?? []).length,
       total_workspaces: Object.keys(perWorkspace).length,
       daily_totals: Object.entries(dailyTotals).map(([date, calls]) => ({ date, calls })),
-      workspaces: workspaceStats,
+      workspaces: allWorkspaceStats,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

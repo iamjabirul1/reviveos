@@ -5,21 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Shield, AlertTriangle, Activity, Loader2 } from 'lucide-react';
+import { Shield, AlertTriangle, Activity, Loader2, Ban, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-// Plan daily limits (mirror of DB function)
 const PLAN_DAILY_LIMITS: Record<string, number> = {
-  free: 10,
-  starter: 50,
-  growth: 500,
-  scale: 2000,
+  free: 10, starter: 50, growth: 500, scale: 2000,
 };
 
 interface WorkspaceStats {
   workspace_id: string;
   workspace_name: string;
   plan: string;
+  ai_suspended: boolean;
+  ai_suspended_reason: string | null;
   total_calls: number;
   by_function: Record<string, number>;
   by_day: Record<string, number>;
@@ -35,10 +38,14 @@ interface AdminData {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [data, setData] = useState<AdminData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [suspendDialog, setSuspendDialog] = useState<{ open: boolean; workspace: WorkspaceStats | null }>({ open: false, workspace: null });
+  const [suspendReason, setSuspendReason] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) checkAdminAndFetch();
@@ -46,8 +53,6 @@ export default function AdminDashboard() {
 
   async function checkAdminAndFetch() {
     if (!user) return;
-
-    // Check admin role client-side for UI gating
     const { data: roles } = await supabase
       .from('user_roles')
       .select('role')
@@ -59,19 +64,50 @@ export default function AdminDashboard() {
       setLoading(false);
       return;
     }
-
     setIsAdmin(true);
 
-    const { data: result, error: fnError } = await supabase.functions.invoke('admin-ai-usage', {
-      body: null,
-    });
-
+    const { data: result, error: fnError } = await supabase.functions.invoke('admin-ai-usage');
     if (fnError) {
       setError(fnError.message);
     } else {
       setData(result as AdminData);
     }
     setLoading(false);
+  }
+
+  async function handleSuspend() {
+    if (!suspendDialog.workspace) return;
+    setActionLoading(suspendDialog.workspace.workspace_id);
+    const { error } = await supabase.functions.invoke('admin-suspend-workspace', {
+      body: {
+        workspace_id: suspendDialog.workspace.workspace_id,
+        action: 'suspend',
+        reason: suspendReason || 'Unusual AI usage detected. Please contact support.',
+      },
+    });
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Workspace suspended', description: `AI access suspended for ${suspendDialog.workspace.workspace_name}. Owner has been notified via email.` });
+      checkAdminAndFetch();
+    }
+    setSuspendDialog({ open: false, workspace: null });
+    setSuspendReason('');
+    setActionLoading(null);
+  }
+
+  async function handleUnsuspend(ws: WorkspaceStats) {
+    setActionLoading(ws.workspace_id);
+    const { error } = await supabase.functions.invoke('admin-suspend-workspace', {
+      body: { workspace_id: ws.workspace_id, action: 'unsuspend' },
+    });
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'AI access restored', description: `${ws.workspace_name} has been reactivated. Owner has been notified via email.` });
+      checkAdminAndFetch();
+    }
+    setActionLoading(null);
   }
 
   if (loading) {
@@ -96,7 +132,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error) {
+  if (error || !data) {
     return (
       <div className="max-w-6xl mx-auto p-6">
         <Card className="border-destructive">
@@ -108,19 +144,18 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!data) return null;
-
   const chartData = data.daily_totals.map((d) => ({
     date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     calls: d.calls,
   }));
 
-  // Flag workspaces with suspicious usage (>70% of daily limit consistently)
   const flaggedWorkspaces = data.workspaces.filter((ws) => {
     const dailyLimit = PLAN_DAILY_LIMITS[ws.plan] || 10;
     const avgDaily = ws.total_calls / data.period_days;
     return avgDaily > dailyLimit * 0.7;
   });
+
+  const suspendedWorkspaces = data.workspaces.filter((ws) => ws.ai_suspended);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -130,7 +165,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground">Total AI Calls (30d)</div>
@@ -147,11 +182,20 @@ export default function AdminDashboard() {
           <CardContent className="pt-6">
             <div className="text-sm text-muted-foreground flex items-center gap-1">
               {flaggedWorkspaces.length > 0 && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
-              Flagged Workspaces
+              Flagged
             </div>
             <div className={`text-3xl font-bold mt-1 ${flaggedWorkspaces.length > 0 ? 'text-destructive' : ''}`}>
               {flaggedWorkspaces.length}
             </div>
+          </CardContent>
+        </Card>
+        <Card className={suspendedWorkspaces.length > 0 ? 'border-orange-500' : ''}>
+          <CardContent className="pt-6">
+            <div className="text-sm text-muted-foreground flex items-center gap-1">
+              <Ban className="h-3.5 w-3.5" />
+              Suspended
+            </div>
+            <div className="text-3xl font-bold mt-1">{suspendedWorkspaces.length}</div>
           </CardContent>
         </Card>
       </div>
@@ -163,7 +207,6 @@ export default function AdminDashboard() {
             <Activity className="h-5 w-5" />
             Global AI Usage — Last 30 Days
           </CardTitle>
-          <CardDescription>Aggregated across all workspaces</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-[260px] w-full">
@@ -173,12 +216,7 @@ export default function AdminDashboard() {
                 <XAxis dataKey="date" tick={{ fontSize: 10 }} className="fill-muted-foreground" interval={4} />
                 <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                  }}
+                  contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: '13px' }}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                 />
                 <Bar dataKey="calls" name="AI Calls" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} />
@@ -187,6 +225,55 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Suspended Workspaces */}
+      {suspendedWorkspaces.length > 0 && (
+        <Card className="border-orange-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-600">
+              <Ban className="h-5 w-5" />
+              Suspended Workspaces
+            </CardTitle>
+            <CardDescription>These workspaces have AI access disabled</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Workspace</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {suspendedWorkspaces.map((ws) => (
+                  <TableRow key={ws.workspace_id}>
+                    <TableCell className="font-medium">{ws.workspace_name}</TableCell>
+                    <TableCell><Badge variant="secondary" className="capitalize">{ws.plan}</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">{ws.ai_suspended_reason || '—'}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actionLoading === ws.workspace_id}
+                        onClick={() => handleUnsuspend(ws)}
+                      >
+                        {actionLoading === ws.workspace_id ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 mr-1 text-green-600" />
+                        )}
+                        Reactivate
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Flagged Workspaces */}
       {flaggedWorkspaces.length > 0 && (
@@ -204,10 +291,11 @@ export default function AdminDashboard() {
                 <TableRow>
                   <TableHead>Workspace</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Total Calls</TableHead>
+                  <TableHead>Total</TableHead>
                   <TableHead>Avg/Day</TableHead>
-                  <TableHead>Daily Limit</TableHead>
+                  <TableHead>Limit</TableHead>
                   <TableHead>Usage</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,10 +311,32 @@ export default function AdminDashboard() {
                       <TableCell className="font-mono">{avgDaily}</TableCell>
                       <TableCell className="font-mono">{dailyLimit}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 min-w-[120px]">
+                        <div className="flex items-center gap-2 min-w-[100px]">
                           <Progress value={Math.min(100, pct)} className="h-2 flex-1" />
                           <span className="text-xs font-medium text-destructive">{pct}%</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {ws.ai_suspended ? (
+                          <Badge variant="outline" className="text-orange-600 border-orange-400">Suspended</Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={actionLoading === ws.workspace_id}
+                            onClick={() => {
+                              setSuspendDialog({ open: true, workspace: ws });
+                              setSuspendReason('');
+                            }}
+                          >
+                            {actionLoading === ws.workspace_id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <Ban className="h-4 w-4 mr-1" />
+                            )}
+                            Suspend
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -252,23 +362,57 @@ export default function AdminDashboard() {
                 <TableRow>
                   <TableHead>Workspace</TableHead>
                   <TableHead>Plan</TableHead>
-                  <TableHead>Total Calls</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Total</TableHead>
                   <TableHead>Generate</TableHead>
                   <TableHead>Enrich</TableHead>
                   <TableHead>Write</TableHead>
-                  <TableHead>Avg/Day</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.workspaces.map((ws) => (
                   <TableRow key={ws.workspace_id}>
-                    <TableCell className="font-medium max-w-[200px] truncate">{ws.workspace_name}</TableCell>
+                    <TableCell className="font-medium max-w-[180px] truncate">{ws.workspace_name}</TableCell>
                     <TableCell><Badge variant="outline" className="capitalize">{ws.plan}</Badge></TableCell>
+                    <TableCell>
+                      {ws.ai_suspended ? (
+                        <Badge variant="destructive" className="text-xs">Suspended</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs">Active</Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono font-medium">{ws.total_calls.toLocaleString()}</TableCell>
                     <TableCell className="font-mono text-muted-foreground">{ws.by_function['generate-messages'] || 0}</TableCell>
                     <TableCell className="font-mono text-muted-foreground">{ws.by_function['enrich-leads'] || 0}</TableCell>
                     <TableCell className="font-mono text-muted-foreground">{ws.by_function['write-with-ai'] || 0}</TableCell>
-                    <TableCell className="font-mono text-muted-foreground">{Math.round(ws.total_calls / data.period_days)}</TableCell>
+                    <TableCell>
+                      {ws.ai_suspended ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={actionLoading === ws.workspace_id}
+                          onClick={() => handleUnsuspend(ws)}
+                        >
+                          {actionLoading === ws.workspace_id && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                          Reactivate
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={actionLoading === ws.workspace_id}
+                          onClick={() => {
+                            setSuspendDialog({ open: true, workspace: ws });
+                            setSuspendReason('');
+                          }}
+                        >
+                          <Ban className="h-3.5 w-3.5 mr-1" />
+                          Suspend
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -276,6 +420,38 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Suspend Confirmation Dialog */}
+      <Dialog open={suspendDialog.open} onOpenChange={(open) => setSuspendDialog({ open, workspace: open ? suspendDialog.workspace : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ban className="h-5 w-5 text-destructive" />
+              Suspend AI Access
+            </DialogTitle>
+            <DialogDescription>
+              This will immediately disable all AI features for <strong>{suspendDialog.workspace?.workspace_name}</strong>. The workspace owner will receive an email notification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Label>Reason (shown to workspace owner)</Label>
+            <Input
+              placeholder="e.g., Unusual AI usage patterns detected"
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuspendDialog({ open: false, workspace: null })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleSuspend} disabled={actionLoading !== null}>
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Suspend AI Access
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
