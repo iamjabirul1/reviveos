@@ -115,6 +115,9 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="business" className="space-y-4">
+          <BusinessContextForm />
+        </TabsContent>
         <TabsContent value="suppressions" className="space-y-4">
           <Card>
             <CardHeader>
