@@ -5,6 +5,31 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 2000;
+const DELAY_BETWEEN_LEADS_MS = 1500;
+
+async function fetchWithRetry(url: string, options: RequestInit, label: string): Promise<Response> {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      let delayMs = BASE_DELAY_MS * Math.pow(2, attempt);
+      if (retryAfter) {
+        delayMs = Math.max(parseInt(retryAfter) * 1000, delayMs);
+      }
+      console.warn(`Rate limited for ${label}. Retrying in ${delayMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await new Promise((r) => setTimeout(r, Math.min(delayMs, 30000)));
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new Error(`Max retries exceeded for ${label}`);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -24,7 +49,14 @@ serve(async (req) => {
 
     const results = [];
 
-    for (const lead of leads) {
+    for (let i = 0; i < leads.length; i++) {
+      const lead = leads[i];
+
+      // Add delay between leads to avoid rate limiting
+      if (i > 0) {
+        await new Promise((r) => setTimeout(r, DELAY_BETWEEN_LEADS_MS));
+      }
+
       const prompt = `You are a B2B sales intelligence analyst. Your job is to deeply research a company and contact to provide actionable sales intelligence.
 
 LEAD TO RESEARCH:
@@ -69,31 +101,29 @@ Respond with ONLY valid JSON in this exact format:
 }`;
 
       try {
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
+        const response = await fetchWithRetry(
+          "https://ai.gateway.lovable.dev/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                { role: "system", content: "You are a B2B sales intelligence analyst who provides deep, actionable research on companies and contacts. Always respond with valid JSON only." },
+                { role: "user", content: prompt },
+              ],
+            }),
           },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
-              { role: "system", content: "You are a B2B sales intelligence analyst who provides deep, actionable research on companies and contacts. Always respond with valid JSON only." },
-              { role: "user", content: prompt },
-            ],
-          }),
-        });
+          `lead-${lead.id}`
+        );
 
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`AI gateway error [${response.status}]:`, errorText);
 
-          if (response.status === 429) {
-            return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-              status: 429,
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
           if (response.status === 402) {
             return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage." }), {
               status: 402,
@@ -115,9 +145,9 @@ Respond with ONLY valid JSON in this exact format:
         } else {
           results.push({ lead_id: lead.id, enrichment: null, error: "Could not parse AI response" });
         }
-      } catch (parseErr) {
-        console.error("Error processing lead:", lead.id, parseErr);
-        results.push({ lead_id: lead.id, enrichment: null, error: "Processing error" });
+      } catch (retryErr) {
+        console.error("Error processing lead:", lead.id, retryErr);
+        results.push({ lead_id: lead.id, enrichment: null, error: retryErr instanceof Error ? retryErr.message : "Processing error" });
       }
     }
 
