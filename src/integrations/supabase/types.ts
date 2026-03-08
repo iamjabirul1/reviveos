@@ -389,6 +389,47 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          plan_limit_warnings: boolean
+          subscription_updates: boolean
+          updated_at: string
+          user_id: string
+          weekly_usage_digest: boolean
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_limit_warnings?: boolean
+          subscription_updates?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_usage_digest?: boolean
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_limit_warnings?: boolean
+          subscription_updates?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_usage_digest?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       paypal_plans: {
         Row: {
           created_at: string
