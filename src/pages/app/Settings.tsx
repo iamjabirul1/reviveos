@@ -19,6 +19,7 @@ import {
 import BusinessContextForm from '@/components/BusinessContextForm';
 import NotificationPreferences from '@/components/NotificationPreferences';
 import IntegrationSettings from '@/components/IntegrationSettings';
+import CrmWebhookSettings from '@/components/CrmWebhookSettings';
 import AIUsageChart from '@/components/AIUsageChart';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
