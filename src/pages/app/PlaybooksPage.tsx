@@ -57,6 +57,7 @@ const DEFAULT_SEQUENCE: SequenceStep[] = [
 export default function PlaybooksPage() {
   const { currentWorkspace } = useWorkspace();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddPlaybook } = usePlanLimits();
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
