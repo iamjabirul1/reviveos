@@ -17,8 +17,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   if (!user) return <Navigate to="/login" replace />;
 
   // Redirect to onboarding if not completed
-  const onboardingDone = (currentWorkspace as any)?.onboarding_completed;
-  if (currentWorkspace && !onboardingDone) {
+  if (currentWorkspace && !currentWorkspace.onboarding_completed) {
     return <Navigate to="/onboarding" replace />;
   }
 

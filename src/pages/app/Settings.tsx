@@ -173,12 +173,8 @@ export default function SettingsPage() {
     }
   }
 
-  // Check plan limits after data loads
-  useEffect(() => {
-    if (!loading && currentWorkspace) {
-      checkPlanLimits();
-    }
-  }, [loading, leadCount, campaignCount, playbookCount]);
+  // Plan limit check removed from page load — this should be handled
+  // server-side (e.g. via a scheduled cron) to avoid sending emails on every visit.
 
   const usageItems = [
     {
