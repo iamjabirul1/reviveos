@@ -67,7 +67,7 @@ Respond with ONLY valid JSON in this exact format:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b",
+          model: "gpt-oss-120b",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
