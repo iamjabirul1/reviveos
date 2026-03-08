@@ -3,6 +3,7 @@ export interface PlanLimits {
   maxWorkspaces: number;
   maxCampaigns: number | 'unlimited';
   maxPlaybooks: number | 'unlimited';
+  maxAICallsPerDay: number;
   channels: ('email' | 'sms')[];
   customPlaybooks: boolean;
   bulkApprovals: boolean;
