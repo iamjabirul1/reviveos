@@ -495,10 +495,10 @@ export default function Landing() {
                 <Badge variant="outline" className="mb-4">Simple Pricing</Badge>
               </motion.div>
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
-                One recovered deal pays for a year
+                Simple pricing for recovering revenue from old leads
               </motion.h2>
               <motion.p variants={fadeUp} className="text-muted-foreground text-lg mb-8">
-                Start free. Upgrade when you see results. Cancel anytime.
+                Choose the plan that fits your lead volume today. Start small, recover lost opportunities fast, and upgrade only when you need more channels, more campaigns, or more client accounts.
               </motion.p>
               <motion.div variants={fadeUp} className="inline-flex items-center bg-muted rounded-full p-1">
                 <button
