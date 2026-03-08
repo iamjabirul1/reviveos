@@ -14,16 +14,560 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          lead_id: string | null
+          payload_json: Json | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          lead_id?: string | null
+          payload_json?: Json | null
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          lead_id?: string | null
+          payload_json?: Json | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          booked_at: string | null
+          campaign_id: string | null
+          created_at: string
+          estimated_value: number | null
+          id: string
+          lead_id: string
+          workspace_id: string
+        }
+        Insert: {
+          booked_at?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          lead_id: string
+          workspace_id: string
+        }
+        Update: {
+          booked_at?: string | null
+          campaign_id?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          id?: string
+          lead_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          channels_json: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_count: number | null
+          name: string
+          offer_json: Json | null
+          playbook_id: string | null
+          playbook_type: string | null
+          segment_json: Json | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          workspace_id: string
+        }
+        Insert: {
+          channels_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_count?: number | null
+          name: string
+          offer_json?: Json | null
+          playbook_id?: string | null
+          playbook_type?: string | null
+          segment_json?: Json | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          workspace_id: string
+        }
+        Update: {
+          channels_json?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_count?: number | null
+          name?: string
+          offer_json?: Json | null
+          playbook_id?: string | null
+          playbook_type?: string | null
+          segment_json?: Json | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          best_angle: string | null
+          best_channel: string | null
+          closed_lost_reason: string | null
+          company: string | null
+          consent_status: string | null
+          created_at: string
+          do_not_contact: boolean | null
+          email: string | null
+          first_name: string | null
+          id: string
+          jurisdiction: string | null
+          last_activity_at: string | null
+          last_contacted_at: string | null
+          last_name: string | null
+          lead_value: number | null
+          no_show_flag: boolean | null
+          notes: string | null
+          phone: string | null
+          revival_bucket: Database["public"]["Enums"]["revival_bucket"] | null
+          revival_score: number | null
+          risk_flag: string | null
+          source: string | null
+          stage: string | null
+          status: string | null
+          suggested_cta: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          best_angle?: string | null
+          best_channel?: string | null
+          closed_lost_reason?: string | null
+          company?: string | null
+          consent_status?: string | null
+          created_at?: string
+          do_not_contact?: boolean | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          jurisdiction?: string | null
+          last_activity_at?: string | null
+          last_contacted_at?: string | null
+          last_name?: string | null
+          lead_value?: number | null
+          no_show_flag?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          revival_bucket?: Database["public"]["Enums"]["revival_bucket"] | null
+          revival_score?: number | null
+          risk_flag?: string | null
+          source?: string | null
+          stage?: string | null
+          status?: string | null
+          suggested_cta?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          best_angle?: string | null
+          best_channel?: string | null
+          closed_lost_reason?: string | null
+          company?: string | null
+          consent_status?: string | null
+          created_at?: string
+          do_not_contact?: boolean | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          jurisdiction?: string | null
+          last_activity_at?: string | null
+          last_contacted_at?: string | null
+          last_name?: string | null
+          lead_value?: number | null
+          no_show_flag?: boolean | null
+          notes?: string | null
+          phone?: string | null
+          revival_bucket?: Database["public"]["Enums"]["revival_bucket"] | null
+          revival_score?: number | null
+          risk_flag?: string | null
+          source?: string | null
+          stage?: string | null
+          status?: string | null
+          suggested_cta?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          ai_rationale: string | null
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          approved_by: string | null
+          body: string
+          campaign_id: string | null
+          channel: Database["public"]["Enums"]["message_channel"]
+          clicked_at: string | null
+          created_at: string
+          delivered_at: string | null
+          id: string
+          lead_id: string
+          replied_at: string | null
+          sent_at: string | null
+          subject: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_rationale?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          approved_by?: string | null
+          body: string
+          campaign_id?: string | null
+          channel?: Database["public"]["Enums"]["message_channel"]
+          clicked_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          lead_id: string
+          replied_at?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          workspace_id: string
+        }
+        Update: {
+          ai_rationale?: string | null
+          approval_status?: Database["public"]["Enums"]["approval_status"]
+          approved_by?: string | null
+          body?: string
+          campaign_id?: string | null
+          channel?: Database["public"]["Enums"]["message_channel"]
+          clicked_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          lead_id?: string
+          replied_at?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playbooks: {
+        Row: {
+          active: boolean | null
+          channels: Json | null
+          created_at: string
+          cta: string | null
+          id: string
+          name: string
+          prompt_template: string | null
+          sequence_json: Json | null
+          tone: string | null
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          channels?: Json | null
+          created_at?: string
+          cta?: string | null
+          id?: string
+          name: string
+          prompt_template?: string | null
+          sequence_json?: Json | null
+          tone?: string | null
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean | null
+          channels?: Json | null
+          created_at?: string
+          cta?: string | null
+          id?: string
+          name?: string
+          prompt_template?: string | null
+          sequence_json?: Json | null
+          tone?: string | null
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playbooks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      suppressions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          jurisdiction: string | null
+          lead_id: string
+          reason: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          jurisdiction?: string | null
+          lead_id: string
+          reason: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          jurisdiction?: string | null
+          lead_id?: string
+          reason?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppressions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suppressions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_user_id: string
+          plan: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_user_id: string
+          plan?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_user_id?: string
+          plan?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member" | "viewer"
+      approval_status: "pending" | "approved" | "rejected" | "edited"
+      campaign_status: "draft" | "active" | "paused" | "completed"
+      message_channel: "email" | "sms"
+      revival_bucket:
+        | "revive_now"
+        | "review_first"
+        | "nurture_later"
+        | "suppress"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +694,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member", "viewer"],
+      approval_status: ["pending", "approved", "rejected", "edited"],
+      campaign_status: ["draft", "active", "paused", "completed"],
+      message_channel: ["email", "sms"],
+      revival_bucket: [
+        "revive_now",
+        "review_first",
+        "nurture_later",
+        "suppress",
+      ],
+    },
   },
 } as const
