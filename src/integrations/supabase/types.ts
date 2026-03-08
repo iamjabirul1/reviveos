@@ -59,6 +59,41 @@ export type Database = {
           },
         ]
       }
+      ai_usage_log: {
+        Row: {
+          created_at: string
+          function_name: string
+          id: string
+          tokens_used: number | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          function_name: string
+          id?: string
+          tokens_used?: number | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          function_name?: string
+          id?: string
+          tokens_used?: number | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booked_at: string | null
@@ -653,6 +688,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_ai_rate_limit: {
+        Args: { _function_name: string; _workspace_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
