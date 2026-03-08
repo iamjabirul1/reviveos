@@ -62,6 +62,7 @@ export default function SettingsPage() {
   const [leadCount, setLeadCount] = useState(0);
   const [campaignCount, setCampaignCount] = useState(0);
   const [playbookCount, setPlaybookCount] = useState(0);
+  const [aiUsageToday, setAiUsageToday] = useState(0);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
 
