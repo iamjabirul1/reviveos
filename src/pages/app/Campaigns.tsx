@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 import { Megaphone, Plus, Play, Pause, CheckCircle, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,9 +17,20 @@ interface Campaign {
   id: string;
   name: string;
   playbook_type: string | null;
+  playbook_id: string | null;
   status: string;
   lead_count: number | null;
+  segment_json: any;
   created_at: string;
+}
+
+interface Playbook {
+  id: string;
+  name: string;
+  type: string;
+  tone: string | null;
+  cta: string | null;
+  active: boolean | null;
 }
 
 export default function CampaignsPage() {
@@ -26,13 +38,23 @@ export default function CampaignsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  // Form state
   const [name, setName] = useState('');
-  const [playbookType, setPlaybookType] = useState('stale_lead');
+  const [selectedPlaybookId, setSelectedPlaybookId] = useState('');
+  const [targetBucket, setTargetBucket] = useState('revive_now');
+  const [scoreRange, setScoreRange] = useState([50, 100]);
+  const [maxLeads, setMaxLeads] = useState(50);
 
   useEffect(() => {
-    if (currentWorkspace) fetchCampaigns();
+    if (currentWorkspace) {
+      fetchCampaigns();
+      fetchPlaybooks();
+    }
   }, [currentWorkspace]);
 
   async function fetchCampaigns() {
@@ -42,77 +64,93 @@ export default function CampaignsPage() {
     setLoading(false);
   }
 
-  async function createCampaign() {
-    if (!currentWorkspace || !name || !user) return;
-    // Count leads that match revive_now for this campaign
-    const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true })
-      .eq('workspace_id', currentWorkspace.id).eq('revival_bucket', 'revive_now');
+  async function fetchPlaybooks() {
+    if (!currentWorkspace) return;
+    const { data } = await supabase.from('playbooks').select('id, name, type, tone, cta, active').eq('workspace_id', currentWorkspace.id).eq('active', true);
+    setPlaybooks((data ?? []) as Playbook[]);
+  }
 
-    const { error } = await supabase.from('campaigns').insert({
+  async function createCampaign() {
+    if (!currentWorkspace || !name || !user || !selectedPlaybookId) return;
+    setCreating(true);
+
+    const selectedPlaybook = playbooks.find(p => p.id === selectedPlaybookId);
+    if (!selectedPlaybook) return;
+
+    // Build lead query with filters
+    let query = supabase.from('leads').select('*')
+      .eq('workspace_id', currentWorkspace.id)
+      .eq('revival_bucket', targetBucket as any)
+      .gte('revival_score', scoreRange[0])
+      .lte('revival_score', scoreRange[1])
+      .limit(maxLeads);
+
+    const { data: targetLeads, count } = await query;
+    const leads = targetLeads ?? [];
+
+    const segmentFilter = { bucket: targetBucket, score_min: scoreRange[0], score_max: scoreRange[1], max_leads: maxLeads };
+
+    const { data: newCampaign, error } = await supabase.from('campaigns').insert({
       workspace_id: currentWorkspace.id,
       name,
-      playbook_type: playbookType,
-      lead_count: count ?? 0,
+      playbook_id: selectedPlaybookId,
+      playbook_type: selectedPlaybook.type,
+      lead_count: leads.length,
+      segment_json: segmentFilter as any,
       created_by: user.id,
-    });
+    }).select('id').single();
+
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      // Fetch full lead data for AI generation
-      const { data: topLeads } = await supabase.from('leads').select('*')
-        .eq('workspace_id', currentWorkspace.id).eq('revival_bucket', 'revive_now' as any).limit(10);
-      
-      if (topLeads && topLeads.length > 0) {
-        const { data: newCampaign } = await supabase.from('campaigns').select('id')
-          .eq('workspace_id', currentWorkspace.id).eq('name', name).limit(1).single();
-        
-        if (newCampaign) {
-          toast({ title: 'Generating AI messages...', description: 'Using Cerebras AI to draft personalized messages' });
-          
-          // Call edge function for AI generation
-          const { data: aiResult, error: aiError } = await supabase.functions.invoke('generate-messages', {
-            body: {
-              leads: topLeads,
-              playbook_type: playbookType,
-              tone: 'friendly',
-              cta: 'book_call',
-            },
-          });
-
-          if (aiError || !aiResult?.messages) {
-            console.error('AI generation failed, using fallbacks:', aiError);
-            // Fallback to template messages
-            const messages = topLeads.map(lead => ({
-              workspace_id: currentWorkspace.id,
-              lead_id: lead.id,
-              campaign_id: newCampaign.id,
-              channel: 'email' as const,
-              subject: `Re: Quick question, ${lead.first_name || 'there'}`,
-              body: `Hi ${lead.first_name || 'there'},\n\nI noticed we connected a while back but didn't get the chance to continue our conversation. I wanted to reach out because I think there might still be a great fit here.\n\nWould you be open to a quick 15-minute call this week?\n\nBest regards`,
-              ai_rationale: 'Template message — AI generation was unavailable.',
-            }));
-            await supabase.from('messages').insert(messages);
-          } else {
-            // Insert AI-generated messages
-            const messages = aiResult.messages.map((msg: any) => ({
-              workspace_id: currentWorkspace.id,
-              lead_id: msg.lead_id,
-              campaign_id: newCampaign.id,
-              channel: 'email' as const,
-              subject: msg.email_subject,
-              body: msg.email_body,
-              ai_rationale: msg.rationale,
-            }));
-            await supabase.from('messages').insert(messages);
-          }
-        }
-      }
-
-      toast({ title: 'Campaign created', description: `${count ?? 0} leads targeted with AI-generated messages` });
-      setOpen(false);
-      setName('');
-      fetchCampaigns();
+      setCreating(false);
+      return;
     }
+
+    // Generate AI messages using playbook config
+    if (leads.length > 0 && newCampaign) {
+      toast({ title: 'Generating AI messages...', description: `Drafting personalized messages for ${leads.length} leads` });
+
+      const { data: aiResult, error: aiError } = await supabase.functions.invoke('generate-messages', {
+        body: {
+          leads,
+          playbook_type: selectedPlaybook.type,
+          tone: selectedPlaybook.tone || 'friendly',
+          cta: selectedPlaybook.cta || 'book_call',
+        },
+      });
+
+      if (aiError || !aiResult?.messages) {
+        console.error('AI generation failed, using fallbacks:', aiError);
+        const messages = leads.map(lead => ({
+          workspace_id: currentWorkspace.id,
+          lead_id: lead.id,
+          campaign_id: newCampaign.id,
+          channel: 'email' as const,
+          subject: `Re: Quick question, ${lead.first_name || 'there'}`,
+          body: `Hi ${lead.first_name || 'there'},\n\nI noticed we connected a while back but didn't get the chance to continue our conversation. I wanted to reach out because I think there might still be a great fit here.\n\nWould you be open to a quick 15-minute call this week?\n\nBest regards`,
+          ai_rationale: 'Template message — AI generation was unavailable.',
+        }));
+        await supabase.from('messages').insert(messages);
+      } else {
+        const messages = aiResult.messages.map((msg: any) => ({
+          workspace_id: currentWorkspace.id,
+          lead_id: msg.lead_id,
+          campaign_id: newCampaign.id,
+          channel: 'email' as const,
+          subject: msg.email_subject,
+          body: msg.email_body,
+          ai_rationale: msg.rationale,
+        }));
+        await supabase.from('messages').insert(messages);
+      }
+    }
+
+    toast({ title: 'Campaign created', description: `${leads.length} leads targeted with AI-generated messages` });
+    setOpen(false);
+    setName('');
+    setSelectedPlaybookId('');
+    setCreating(false);
+    fetchCampaigns();
   }
 
   async function updateStatus(id: string, status: string) {
@@ -129,10 +167,7 @@ export default function CampaignsPage() {
     if (error) {
       toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({
-        title: 'Campaign sent',
-        description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed`,
-      });
+      toast({ title: 'Campaign sent', description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed` });
       fetchCampaigns();
     }
   }
@@ -163,28 +198,67 @@ export default function CampaignsPage() {
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> New Campaign</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Create Campaign</DialogTitle></DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
                 <Label>Campaign Name</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="March Win-Back" />
               </div>
+
               <div className="space-y-2">
-                <Label>Playbook Type</Label>
-                <Select value={playbookType} onValueChange={setPlaybookType}>
+                <Label>Playbook</Label>
+                {playbooks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No active playbooks. Create one in the Playbooks page first.</p>
+                ) : (
+                  <Select value={selectedPlaybookId} onValueChange={setSelectedPlaybookId}>
+                    <SelectTrigger><SelectValue placeholder="Select a playbook..." /></SelectTrigger>
+                    <SelectContent>
+                      {playbooks.map(pb => (
+                        <SelectItem key={pb.id} value={pb.id}>
+                          {pb.name} ({pb.type.replace('_', ' ')}) · {pb.tone} · {pb.cta?.replace('_', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Target Bucket</Label>
+                <Select value={targetBucket} onValueChange={setTargetBucket}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="stale_lead">Stale Lead Reactivation</SelectItem>
-                    <SelectItem value="no_show">No-Show Rescue</SelectItem>
-                    <SelectItem value="closed_lost">Closed-Lost Comeback</SelectItem>
-                    <SelectItem value="proposal_followup">Proposal Follow-Up</SelectItem>
-                    <SelectItem value="dormant_customer">Dormant Customer</SelectItem>
+                    <SelectItem value="revive_now">Revive Now (highest priority)</SelectItem>
+                    <SelectItem value="review_first">Review First</SelectItem>
+                    <SelectItem value="nurture_later">Nurture Later</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-sm text-muted-foreground">This will target all "Revive Now" leads and generate AI draft messages for review.</p>
-              <Button onClick={createCampaign} className="w-full" disabled={!name}>Create & Generate Messages</Button>
+
+              <div className="space-y-2">
+                <Label>Score Range: {scoreRange[0]} – {scoreRange[1]}</Label>
+                <Slider
+                  value={scoreRange}
+                  onValueChange={setScoreRange}
+                  min={0}
+                  max={100}
+                  step={5}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Max Leads</Label>
+                <Input type="number" value={maxLeads} onChange={(e) => setMaxLeads(parseInt(e.target.value) || 10)} min={1} max={500} />
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                This will target leads matching your filters and generate AI draft messages using the selected playbook's tone and CTA.
+              </p>
+              <Button onClick={createCampaign} className="w-full" disabled={!name || !selectedPlaybookId || creating}>
+                {creating ? 'Creating...' : 'Create & Generate Messages'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
