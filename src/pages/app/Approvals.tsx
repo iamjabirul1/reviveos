@@ -139,7 +139,7 @@ export default function ApprovalsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Approval Queue</h1>
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{messages.length} pending</Badge>
