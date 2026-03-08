@@ -10,8 +10,8 @@ export default function AppLayout() {
   const { signOut, user } = useAuth();
   const { currentWorkspace } = useWorkspace();
 
-  const isSuspended = (currentWorkspace as any)?.ai_suspended === true;
-  const suspendedReason = (currentWorkspace as any)?.ai_suspended_reason;
+  const isSuspended = currentWorkspace?.ai_suspended === true;
+  const suspendedReason = currentWorkspace?.ai_suspended_reason;
 
   return (
     <SidebarProvider>
