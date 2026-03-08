@@ -106,6 +106,37 @@ export default function SettingsPage() {
     fetchData();
   }
 
+  async function sendNotificationEmail(type: string, details?: Record<string, unknown>) {
+    if (!currentWorkspace) return;
+    try {
+      await supabase.functions.invoke('send-notification-email', {
+        body: { type, workspace_id: currentWorkspace.id, details },
+      });
+    } catch (err) {
+      console.error('Failed to send notification email:', err);
+    }
+  }
+
+  async function checkPlanLimits() {
+    if (!currentWorkspace) return;
+    const warningItems = usageItems
+      .filter((item) => {
+        if (item.max === 'unlimited') return false;
+        const pct = Math.min(100, (item.current / (item.max as number)) * 100);
+        return pct >= 80;
+      })
+      .map((item) => ({
+        label: item.label,
+        current: item.current,
+        max: item.max as number,
+        pct: Math.round(Math.min(100, (item.current / (item.max as number)) * 100)),
+      }));
+
+    if (warningItems.length > 0) {
+      await sendNotificationEmail('plan_limit_warning', { items: warningItems });
+    }
+  }
+
   async function cancelSubscription() {
     if (!subscription) return;
     setCancelling(true);
@@ -122,7 +153,9 @@ export default function SettingsPage() {
           .eq('id', currentWorkspace.id);
       }
 
-      toast({ title: 'Subscription cancelled', description: 'Your plan has been downgraded to Free.' });
+      await sendNotificationEmail('subscription_cancelled');
+
+      toast({ title: 'Subscription cancelled', description: 'Your plan has been downgraded to Free. A confirmation email has been sent.' });
       refetch();
       fetchData();
     } catch {
@@ -131,6 +164,13 @@ export default function SettingsPage() {
       setCancelling(false);
     }
   }
+
+  // Check plan limits after data loads
+  useEffect(() => {
+    if (!loading && currentWorkspace) {
+      checkPlanLimits();
+    }
+  }, [loading, leadCount, campaignCount, playbookCount]);
 
   const usageItems = [
     {
