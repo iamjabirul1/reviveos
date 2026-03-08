@@ -80,7 +80,7 @@ export default function Dashboard() {
   async function fetchAll() {
     if (!currentWorkspace) return;
     const wsId = currentWorkspace.id;
-
+    try {
     const [
       totalRes, reviveRes, reviewRes, nurtureRes, suppressRes,
       sentRes, deliveredRes, openedRes, clickedRes, repliedRes,
