@@ -44,6 +44,23 @@ Deno.serve(async (req) => {
       throw new Error("No leads provided");
     }
 
+    // Rate limit check
+    if (workspace_id) {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: rateLimit } = await sb.rpc("check_ai_rate_limit", {
+        _workspace_id: workspace_id,
+        _function_name: "generate-messages",
+      });
+      if (rateLimit && !rateLimit.allowed) {
+        return new Response(JSON.stringify({
+          error: "Daily AI usage limit reached",
+          daily_limit: rateLimit.daily_limit,
+          used_today: rateLimit.used_today,
+          plan: rateLimit.plan,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     // Fetch workspace business context using service role
     let businessContextPrompt = "";
     if (workspace_id) {
