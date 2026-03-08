@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
       total_calls: (logs ?? []).length,
       total_workspaces: Object.keys(perWorkspace).length,
       daily_totals: Object.entries(dailyTotals).map(([date, calls]) => ({ date, calls })),
-      workspaces: workspaceStats,
+      workspaces: allWorkspaceStats,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
