@@ -476,7 +476,7 @@ export default function Landing() {
                 {
                   name: 'Starter',
                   desc: 'For solopreneurs testing the waters',
-                  price: { monthly: 0, annual: 0 },
+                  price: { monthly: 39, annual: 31 },
                   cta: 'Start Free',
                   popular: false,
                   features: [
