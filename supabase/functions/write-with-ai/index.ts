@@ -144,7 +144,7 @@ Respond with ONLY valid JSON:
 
       // Log AI usage
       if (workspace_id) {
-        const userId = claimsData.claims.sub as string;
+        const userId = authUser.id;
         await supabase.from("ai_usage_log").insert({
           workspace_id,
           user_id: userId,
