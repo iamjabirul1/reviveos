@@ -194,6 +194,11 @@ export default function SettingsPage() {
       current: playbookCount,
       max: limits.maxPlaybooks,
     },
+    {
+      label: 'AI Calls (today)',
+      current: aiUsageToday,
+      max: limits.maxAICallsPerDay,
+    },
   ];
 
   return (
