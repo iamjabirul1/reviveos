@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.paypal-create-subscription]
 verify_jwt = false
+
+[functions.paypal-config]
+verify_jwt = false
