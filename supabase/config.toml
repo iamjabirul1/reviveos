@@ -2,3 +2,6 @@ project_id = "daaszrjhoqxxjhhmxouk"
 
 [functions.generate-messages]
 verify_jwt = false
+
+[functions.send-messages]
+verify_jwt = false

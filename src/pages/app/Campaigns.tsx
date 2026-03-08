@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Megaphone, Plus, Play, Pause, CheckCircle } from 'lucide-react';
+import { Megaphone, Plus, Play, Pause, CheckCircle, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Campaign {
@@ -120,6 +120,23 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }
 
+  async function sendCampaign(campaignId: string) {
+    if (!currentWorkspace) return;
+    toast({ title: 'Sending...', description: 'Delivering approved messages via email' });
+    const { data, error } = await supabase.functions.invoke('send-messages', {
+      body: { campaign_id: campaignId, workspace_id: currentWorkspace.id },
+    });
+    if (error) {
+      toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({
+        title: 'Campaign sent',
+        description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed`,
+      });
+      fetchCampaigns();
+    }
+  }
+
   const statusIcon = (s: string) => {
     switch (s) {
       case 'active': return <Play className="h-3 w-3" />;
@@ -197,16 +214,21 @@ export default function CampaignsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">{c.lead_count ?? 0} leads targeted</p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {c.status === 'draft' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
                       <Play className="mr-1 h-3 w-3" /> Activate
                     </Button>
                   )}
                   {c.status === 'active' && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, 'paused')}>
-                      <Pause className="mr-1 h-3 w-3" /> Pause
-                    </Button>
+                    <>
+                      <Button size="sm" onClick={() => sendCampaign(c.id)}>
+                        <Send className="mr-1 h-3 w-3" /> Send
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, 'paused')}>
+                        <Pause className="mr-1 h-3 w-3" /> Pause
+                      </Button>
+                    </>
                   )}
                   {c.status === 'paused' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
