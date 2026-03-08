@@ -303,6 +303,9 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* AI Usage Chart */}
+          <AIUsageChart />
+
           {/* Subscription Details */}
           {subscription && subscription.status !== 'cancelled' && (
             <Card>
