@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,10 @@ import {
   ChevronDown, Mail, Phone, Sparkles, Lock, Target, Eye,
   ArrowUpRight, Play, Quote, Check, X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { PayPalPricingProvider, PayPalSubscribeButton } from '@/components/PayPalPricing';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
