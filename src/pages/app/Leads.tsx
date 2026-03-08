@@ -46,6 +46,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const pageSize = 25;
 
   useEffect(() => {
