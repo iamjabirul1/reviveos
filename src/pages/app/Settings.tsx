@@ -19,6 +19,7 @@ import {
 import BusinessContextForm from '@/components/BusinessContextForm';
 import NotificationPreferences from '@/components/NotificationPreferences';
 import IntegrationSettings from '@/components/IntegrationSettings';
+import CrmWebhookSettings from '@/components/CrmWebhookSettings';
 import AIUsageChart from '@/components/AIUsageChart';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
@@ -487,53 +488,7 @@ export default function SettingsPage() {
         <TabsContent value="integrations" className="space-y-4">
           <IntegrationSettings />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>CRM Webhook</CardTitle>
-              <CardDescription>Send events from HubSpot, GoHighLevel, Shopify, or Calendly to sync leads automatically</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Webhook URL</Label>
-                <div className="flex gap-2">
-                  <Input
-                    readOnly
-                    value={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-webhook?source=hubspot`}
-                    className="font-mono text-xs"
-                  />
-                  <Button variant="outline" size="sm" onClick={() => {
-                    navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-webhook?source=hubspot`);
-                    toast({ title: 'Copied to clipboard' });
-                  }}>Copy</Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Change <code>?source=hubspot</code> to <code>?source=gohighlevel</code>, <code>?source=shopify</code>, or <code>?source=calendly</code> as needed.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Supported Events</Label>
-                <div className="flex flex-wrap gap-2">
-                  {['contact_updated', 'deal_updated', 'booking_created', 'reply_received', 'shopify_order', 'shopify_customer'].map(evt => (
-                    <Badge key={evt} variant="outline" className="font-mono text-xs">{evt}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Example Payload</Label>
-                <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto">
-{JSON.stringify({
-  workspace_id: currentWorkspace?.id ?? '<workspace_id>',
-  event_type: 'contact_updated',
-  email: 'lead@example.com',
-  first_name: 'Jane',
-  last_name: 'Doe',
-  company: 'Acme Inc',
-  deal_value: 5000,
-}, null, 2)}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
+          <CrmWebhookSettings workspaceId={currentWorkspace?.id} />
         </TabsContent>
       </Tabs>
     </div>
