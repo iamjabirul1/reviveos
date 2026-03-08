@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Save, ShieldX, ScrollText } from 'lucide-react';
+import { Settings, Save, ShieldX, ScrollText, Building2 } from 'lucide-react';
+import BusinessContextForm from '@/components/BusinessContextForm';
 import { useToast } from '@/hooks/use-toast';
 
 interface Suppression {
@@ -77,6 +78,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="workspace">
         <TabsList>
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
+          <TabsTrigger value="business">Business Context</TabsTrigger>
           <TabsTrigger value="suppressions">Suppressions</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
@@ -113,6 +115,9 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="business" className="space-y-4">
+          <BusinessContextForm />
+        </TabsContent>
         <TabsContent value="suppressions" className="space-y-4">
           <Card>
             <CardHeader>
