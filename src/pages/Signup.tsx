@@ -17,6 +17,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [signupComplete, setSignupComplete] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
@@ -29,8 +31,7 @@ export default function Signup() {
     if (error) {
       toast({ title: 'Signup failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Check your email', description: 'We sent you a confirmation link.' });
-      navigate('/app');
+      setSignupComplete(true);
     }
   };
 
