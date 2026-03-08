@@ -65,6 +65,7 @@ DEEP RESEARCH DATA (use this heavily for personalization):
 - Timing Signal: ${enrichment.timing_signal || 'N/A'}` : '';
 
       const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
+${businessContextPrompt}
 
 RESEARCH PHASE (internal — do NOT include in output):
 Before writing, deeply analyze everything you know about:
