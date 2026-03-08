@@ -25,6 +25,21 @@ serve(async (req) => {
     const results = [];
 
     for (const lead of leads) {
+      // Build enrichment context if available
+      const enrichment = lead.enrichment_json;
+      const enrichmentContext = enrichment ? `
+DEEP RESEARCH DATA (use this heavily for personalization):
+- Company Summary: ${enrichment.company_summary || 'N/A'}
+- Industry: ${enrichment.industry || 'N/A'}
+- Company Size: ${enrichment.company_size_estimate || 'N/A'}
+- Pain Points: ${(enrichment.pain_points || []).join(', ')}
+- Industry Trends: ${(enrichment.recent_trends || []).join(', ')}
+- Decision-Maker Profile: ${enrichment.decision_maker_profile || 'N/A'}
+- Competitors: ${(enrichment.competitors || []).join(', ')}
+- Personalization Hooks: ${(enrichment.personalization_hooks || []).join(' | ')}
+- Best Outreach Angle: ${enrichment.best_outreach_angle || 'N/A'}
+- Timing Signal: ${enrichment.timing_signal || 'N/A'}` : '';
+
       const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
 
 RESEARCH PHASE (internal — do NOT include in output):
@@ -33,9 +48,10 @@ Before writing, deeply analyze everything you know about:
 2. The contact "${lead.first_name || ''} ${lead.last_name || ''}" — based on their role/title, what are their likely priorities and pain points
 3. The context clues: source="${lead.source || 'Unknown'}", stage="${lead.stage || 'Unknown'}", closed-lost reason="${lead.closed_lost_reason || 'N/A'}", notes="${lead.notes || 'None'}"
 4. The timing: last contacted ${lead.last_contacted_at || 'unknown date'}, no-show=${lead.no_show_flag ? 'Yes' : 'No'}
+${enrichmentContext}
 
 WRITING RULES:
-- Reference specific, plausible industry challenges or trends for their company/industry — make it feel researched
+- ${enrichment ? 'USE THE DEEP RESEARCH DATA ABOVE — reference specific pain points, industry trends, and personalization hooks' : 'Reference specific, plausible industry challenges or trends for their company/industry'}
 - Never fabricate specific facts you don't know (revenue, headcount, etc.) — instead reference industry-level insights
 - Open with something that shows you understand THEIR world, not yours
 - Keep emails under 120 words — every word must earn its place
