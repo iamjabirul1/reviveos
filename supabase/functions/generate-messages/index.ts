@@ -25,21 +25,38 @@ serve(async (req) => {
     const results = [];
 
     for (const lead of leads) {
-      const systemPrompt = `You are an expert B2B sales copywriter specializing in win-back and re-engagement campaigns. You write personalized, human-sounding messages that get replies.
+      const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
 
-Rules:
-- Never invent specific details not provided in the lead context
-- Never make unsupported claims
-- Keep emails under 150 words
-- Keep SMS under 160 characters
-- Be ${tone || 'friendly'} in tone
+RESEARCH PHASE (internal — do NOT include in output):
+Before writing, deeply analyze everything you know about:
+1. The company "${lead.company || 'their company'}" — what industry are they in, what challenges do companies like this face, what trends affect them
+2. The contact "${lead.first_name || ''} ${lead.last_name || ''}" — based on their role/title, what are their likely priorities and pain points
+3. The context clues: source="${lead.source || 'Unknown'}", stage="${lead.stage || 'Unknown'}", closed-lost reason="${lead.closed_lost_reason || 'N/A'}", notes="${lead.notes || 'None'}"
+4. The timing: last contacted ${lead.last_contacted_at || 'unknown date'}, no-show=${lead.no_show_flag ? 'Yes' : 'No'}
+
+WRITING RULES:
+- Reference specific, plausible industry challenges or trends for their company/industry — make it feel researched
+- Never fabricate specific facts you don't know (revenue, headcount, etc.) — instead reference industry-level insights
+- Open with something that shows you understand THEIR world, not yours
+- Keep emails under 120 words — every word must earn its place
+- Keep SMS under 155 characters
+- Be ${tone || 'friendly'} in tone but always professional
 - The CTA should be: ${formatCTA(cta || 'book_call')}
-- Include a one-line rationale for why this message approach was chosen`;
+- If they no-showed, acknowledge it gracefully without guilt-tripping
+- If closed-lost, reference what may have changed since then
+- The message should feel like it was written by a human who spent 10 minutes researching them
 
-      const userPrompt = `Generate a win-back message for this lead:
+PERSONALIZATION ANGLES TO CONSIDER:
+- Industry trends that affect "${lead.company || 'their business'}"
+- Pain points typical for someone at their stage ("${lead.stage || 'prospect'}")
+- The original source of the lead ("${lead.source || 'Unknown'}") — reference how you connected
+- Their lead value ($${lead.lead_value || 'Unknown'}) signals the deal size/complexity
+- Revival score: ${lead.revival_score || 'N/A'}, Best angle: ${lead.best_angle || 'General'}`;
 
-Playbook type: ${formatPlaybookType(playbook_type || 'stale_lead')}
-Lead name: ${lead.first_name || ''} ${lead.last_name || ''}
+      const userPrompt = `Generate a hyper-personalized win-back message for this lead:
+
+Playbook: ${formatPlaybookType(playbook_type || 'stale_lead')}
+Name: ${lead.first_name || ''} ${lead.last_name || ''}
 Company: ${lead.company || 'Unknown'}
 Email: ${lead.email || 'N/A'}
 Source: ${lead.source || 'Unknown'}
@@ -49,15 +66,13 @@ No-show: ${lead.no_show_flag ? 'Yes' : 'No'}
 Closed-lost reason: ${lead.closed_lost_reason || 'N/A'}
 Notes: ${lead.notes || 'None'}
 Lead value: ${lead.lead_value ? '$' + lead.lead_value : 'Unknown'}
-Revival score: ${lead.revival_score || 'N/A'}
-Best angle: ${lead.best_angle || 'General re-engagement'}
 
-Respond with ONLY valid JSON in this exact format:
+Respond with ONLY valid JSON:
 {
-  "email_subject": "...",
-  "email_body": "...",
-  "sms_body": "...",
-  "rationale": "..."
+  "email_subject": "Short, curiosity-driven subject line (no generic 'follow up')",
+  "email_body": "Hyper-personalized email referencing their industry/company context",
+  "sms_body": "Concise SMS under 155 chars with personal touch",
+  "rationale": "2-3 sentences explaining: what research angle you used, why this approach fits this specific lead, and what makes this message different from a generic template"
 }`;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -67,7 +82,7 @@ Respond with ONLY valid JSON in this exact format:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
