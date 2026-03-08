@@ -3,10 +3,28 @@ project_id = "daaszrjhoqxxjhhmxouk"
 [functions.generate-messages]
 verify_jwt = false
 
+[functions.enrich-leads]
+verify_jwt = false
+
 [functions.send-messages]
 verify_jwt = false
 
+[functions.map-csv-fields]
+verify_jwt = false
+
+[functions.write-with-ai]
+verify_jwt = false
+
+[functions.sequence-scheduler]
+verify_jwt = false
+
 [functions.crm-webhook]
+verify_jwt = false
+
+[functions.email-tracking]
+verify_jwt = false
+
+[functions.reply-webhook]
 verify_jwt = false
 
 [functions.paypal-setup]

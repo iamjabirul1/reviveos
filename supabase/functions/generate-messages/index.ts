@@ -1,16 +1,38 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -22,10 +44,9 @@ serve(async (req) => {
       throw new Error("No leads provided");
     }
 
-    // Fetch workspace business context
+    // Fetch workspace business context using service role
     let businessContextPrompt = "";
     if (workspace_id) {
-      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
       const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data: ws } = await sb.from("workspaces").select("business_context").eq("id", workspace_id).single();
       if (ws?.business_context) {
@@ -49,7 +70,6 @@ SENDER'S BUSINESS CONTEXT (write FROM this company's perspective):
     const results = [];
 
     for (const lead of leads) {
-      // Build enrichment context if available
       const enrichment = lead.enrichment_json;
       const enrichmentContext = enrichment ? `
 DEEP RESEARCH DATA (use this heavily for personalization):
@@ -137,18 +157,16 @@ Respond with ONLY valid JSON:
 
         if (response.status === 429) {
           return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
         if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage." }), {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          return new Response(JSON.stringify({ error: "AI credits exhausted. Please check your usage." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
 
-        results.push({ lead_id: lead.id, ...generateFallback(lead, playbook_type, tone, cta) });
+        results.push({ lead_id: lead.id, ...generateFallback(lead) });
         continue;
       }
 
@@ -167,10 +185,10 @@ Respond with ONLY valid JSON:
             rationale: parsed.rationale || "AI-generated message",
           });
         } else {
-          results.push({ lead_id: lead.id, ...generateFallback(lead, playbook_type, tone, cta) });
+          results.push({ lead_id: lead.id, ...generateFallback(lead) });
         }
       } catch {
-        results.push({ lead_id: lead.id, ...generateFallback(lead, playbook_type, tone, cta) });
+        results.push({ lead_id: lead.id, ...generateFallback(lead) });
       }
     }
 
@@ -207,7 +225,7 @@ function formatPlaybookType(type: string): string {
   return map[type] || type;
 }
 
-function generateFallback(lead: any, playbookType: string, tone: string, cta: string) {
+function generateFallback(lead: any) {
   const name = lead.first_name || "there";
   return {
     email_subject: `Re: Quick question, ${name}`,
