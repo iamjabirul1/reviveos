@@ -95,7 +95,12 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Plan</Label>
-                <Badge variant="secondary" className="capitalize">{currentWorkspace?.plan ?? 'free'}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="capitalize">{currentWorkspace?.plan ?? 'free'}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {currentWorkspace?.plan === 'pro' ? '5,000 leads' : currentWorkspace?.plan === 'enterprise' ? '50,000 leads' : '500 leads'}
+                  </span>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Owner</Label>
@@ -195,17 +200,65 @@ export default function SettingsPage() {
         <TabsContent value="integrations" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Integrations</CardTitle>
-              <CardDescription>Connect your tools (coming soon)</CardDescription>
+              <CardTitle>CRM Webhook</CardTitle>
+              <CardDescription>Send events from HubSpot, GoHighLevel, or Calendly to sync leads automatically</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {['Resend (Email)', 'Twilio (SMS)', 'HubSpot', 'GoHighLevel', 'Calendly'].map(name => (
+              <div className="space-y-2">
+                <Label>Webhook URL</Label>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-webhook?source=hubspot`}
+                    className="font-mono text-xs"
+                  />
+                  <Button variant="outline" size="sm" onClick={() => {
+                    navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/crm-webhook?source=hubspot`);
+                    toast({ title: 'Copied to clipboard' });
+                  }}>Copy</Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Change <code>?source=hubspot</code> to <code>?source=gohighlevel</code> or <code>?source=calendly</code> as needed.</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Supported Events</Label>
+                <div className="flex flex-wrap gap-2">
+                  {['contact_updated', 'deal_updated', 'booking_created', 'reply_received'].map(evt => (
+                    <Badge key={evt} variant="outline" className="font-mono text-xs">{evt}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Example Payload</Label>
+                <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto">
+{JSON.stringify({
+  workspace_id: currentWorkspace?.id ?? '<workspace_id>',
+  event_type: 'contact_updated',
+  email: 'lead@example.com',
+  first_name: 'Jane',
+  last_name: 'Doe',
+  company: 'Acme Inc',
+  deal_value: 5000,
+}, null, 2)}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Native Integrations</CardTitle>
+              <CardDescription>Direct API connections (coming soon)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {['Resend (Email)', 'Twilio (SMS)', 'HubSpot API', 'GoHighLevel API', 'Calendly'].map(name => (
                 <div key={name} className="flex items-center justify-between py-3 border-b last:border-0">
                   <div>
                     <p className="font-medium">{name}</p>
-                    <p className="text-sm text-muted-foreground">Not connected</p>
+                    <p className="text-sm text-muted-foreground">{name.includes('Resend') ? 'Connected' : 'Not connected'}</p>
                   </div>
-                  <Button variant="outline" size="sm" disabled>Connect</Button>
+                  <Button variant="outline" size="sm" disabled={!name.includes('Resend')}>
+                    {name.includes('Resend') ? 'Connected ✓' : 'Connect'}
+                  </Button>
                 </div>
               ))}
             </CardContent>

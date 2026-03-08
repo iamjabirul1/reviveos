@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { scoreLead } from '@/lib/scoring';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,6 +37,7 @@ type Step = 'upload' | 'mapping' | 'importing' | 'done';
 
 export default function ImportPage() {
   const { currentWorkspace } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('upload');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -85,6 +87,24 @@ export default function ImportPage() {
 
   async function runImport() {
     if (!currentWorkspace) return;
+
+    // Plan enforcement
+    const planLimits: Record<string, number> = { free: 500, pro: 5000, enterprise: 50000 };
+    const limit = planLimits[currentWorkspace.plan] ?? 500;
+    const { count: currentCount } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', currentWorkspace.id);
+
+    if ((currentCount ?? 0) + csvData.length > limit) {
+      toast({
+        title: 'Plan limit reached',
+        description: `Your ${currentWorkspace.plan} plan allows ${limit} leads. You have ${currentCount ?? 0} and are trying to import ${csvData.length}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setStep('importing');
     let imported = 0, duplicates = 0, errors = 0;
     const wsId = currentWorkspace.id;
@@ -143,6 +163,17 @@ export default function ImportPage() {
     }
 
     setImportStats({ imported, duplicates, errors });
+
+    // Log activity
+    if (currentWorkspace && user) {
+      await supabase.from('activity_logs').insert({
+        workspace_id: currentWorkspace.id,
+        user_id: user.id,
+        event_type: 'leads_imported',
+        payload_json: { imported, duplicates, errors, total_rows: rows.length },
+      });
+    }
+
     setStep('done');
   }
 

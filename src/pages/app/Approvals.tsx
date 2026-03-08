@@ -139,7 +139,7 @@ export default function ApprovalsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Approval Queue</h1>
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{messages.length} pending</Badge>
@@ -150,20 +150,20 @@ export default function ApprovalsPage() {
       {current && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <CardTitle className="text-base truncate">
                   {(current as any).lead?.first_name} {(current as any).lead?.last_name}
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   {(current as any).lead?.email} · {(current as any).lead?.company} · Score: {(current as any).lead?.revival_score}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Button variant="outline" size="icon" onClick={() => setCurrentIndex(i => Math.max(0, i - 1))} disabled={currentIndex === 0}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <span className="text-sm text-muted-foreground">{currentIndex + 1} / {messages.length}</span>
+                <span className="text-sm text-muted-foreground whitespace-nowrap">{currentIndex + 1} / {messages.length}</span>
                 <Button variant="outline" size="icon" onClick={() => setCurrentIndex(i => Math.min(messages.length - 1, i + 1))} disabled={currentIndex === messages.length - 1}>
                   <ChevronRight className="h-4 w-4" />
                 </Button>

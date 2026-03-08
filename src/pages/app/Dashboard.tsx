@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, MessageSquare, Mail, CalendarCheck, DollarSign, ShieldX, BookOpen, Zap } from 'lucide-react';
+import { Users, MessageSquare, Mail, CalendarCheck, DollarSign, ShieldX, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface Metrics {
@@ -35,26 +35,34 @@ export default function Dashboard() {
     if (!currentWorkspace) return;
     const wsId = currentWorkspace.id;
 
-    const [leadsRes, msgsRes, bookingsRes] = await Promise.all([
-      supabase.from('leads').select('revival_bucket, lead_value').eq('workspace_id', wsId),
-      supabase.from('messages').select('sent_at, replied_at').eq('workspace_id', wsId),
+    // Use count queries to avoid 1000-row limit
+    const [
+      totalRes, reviveRes, reviewRes, nurtureRes, suppressRes,
+      sentRes, repliedRes, bookingsRes, valueRes,
+    ] = await Promise.all([
+      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).eq('revival_bucket', 'revive_now'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).eq('revival_bucket', 'review_first'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).eq('revival_bucket', 'nurture_later'),
+      supabase.from('leads').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).eq('revival_bucket', 'suppress'),
+      supabase.from('messages').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).not('sent_at', 'is', null),
+      supabase.from('messages').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId).not('replied_at', 'is', null),
+      supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('workspace_id', wsId),
       supabase.from('bookings').select('estimated_value').eq('workspace_id', wsId),
     ]);
 
-    const leads = leadsRes.data ?? [];
-    const msgs = msgsRes.data ?? [];
-    const bks = bookingsRes.data ?? [];
+    const pipelineValue = (valueRes.data ?? []).reduce((sum, b) => sum + (b.estimated_value ?? 0), 0);
 
     setMetrics({
-      totalLeads: leads.length,
-      reviveNow: leads.filter(l => l.revival_bucket === 'revive_now').length,
-      reviewFirst: leads.filter(l => l.revival_bucket === 'review_first').length,
-      nurtureLater: leads.filter(l => l.revival_bucket === 'nurture_later').length,
-      suppressed: leads.filter(l => l.revival_bucket === 'suppress').length,
-      messagesSent: msgs.filter(m => m.sent_at).length,
-      replies: msgs.filter(m => m.replied_at).length,
-      bookings: bks.length,
-      pipelineValue: bks.reduce((sum, b) => sum + (b.estimated_value ?? 0), 0),
+      totalLeads: totalRes.count ?? 0,
+      reviveNow: reviveRes.count ?? 0,
+      reviewFirst: reviewRes.count ?? 0,
+      nurtureLater: nurtureRes.count ?? 0,
+      suppressed: suppressRes.count ?? 0,
+      messagesSent: sentRes.count ?? 0,
+      replies: repliedRes.count ?? 0,
+      bookings: bookingsRes.count ?? 0,
+      pipelineValue,
     });
     setLoading(false);
   }
