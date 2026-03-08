@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookOpen, Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { BookOpen, Plus, Trash2, ArrowUp, ArrowDown, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const PLAYBOOK_TYPES = [
@@ -27,6 +28,8 @@ interface SequenceStep {
   channel: string;
   label: string;
   delay_days: number;
+  custom_subject?: string;
+  custom_body?: string;
 }
 
 interface Playbook {
@@ -38,6 +41,7 @@ interface Playbook {
   channels: unknown;
   active: boolean | null;
   sequence_json: unknown;
+  prompt_template: string | null;
   created_at: string;
 }
 
@@ -55,6 +59,7 @@ export default function PlaybooksPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [detailPlaybook, setDetailPlaybook] = useState<Playbook | null>(null);
+  const [aiWritingIndex, setAiWritingIndex] = useState<number | null>(null);
 
   const [name, setName] = useState('');
   const [type, setType] = useState('stale_lead');
@@ -98,14 +103,53 @@ export default function PlaybooksPage() {
     setSequence(prev => prev.map((s, i) => i === index ? { ...s, [field]: value } : s));
   }
 
+  async function writeWithAI(index: number) {
+    if (!currentWorkspace) return;
+    setAiWritingIndex(index);
+    const step = sequence[index];
+
+    try {
+      const { data, error } = await supabase.functions.invoke('write-with-ai', {
+        body: {
+          workspace_id: currentWorkspace.id,
+          playbook_type: type,
+          tone,
+          cta: cta.replace('_', ' '),
+          channel: step.channel,
+          context: `This is step ${step.step} of a sequence. Label: "${step.label}". ${step.step > 1 ? 'This is a follow-up message.' : 'This is the first touch.'}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) {
+        toast({ title: 'AI Error', description: data.error, variant: 'destructive' });
+        return;
+      }
+
+      setSequence(prev => prev.map((s, i) => {
+        if (i !== index) return s;
+        return {
+          ...s,
+          custom_subject: data.subject || s.custom_subject,
+          custom_body: data.body || '',
+        };
+      }));
+
+      toast({ title: '✨ AI draft ready', description: data.rationale || 'Message generated' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Failed to generate', variant: 'destructive' });
+    } finally {
+      setAiWritingIndex(null);
+    }
+  }
+
   async function createPlaybook() {
     if (!currentWorkspace || !name) {
       toast({ title: 'Error', description: !name ? 'Please enter a playbook name' : 'No workspace selected', variant: 'destructive' });
       return;
     }
     const channels = [...new Set(sequence.map(s => s.channel))];
-    console.log('Creating playbook:', { workspace_id: currentWorkspace.id, name, type, tone, cta, channels, sequence });
-    const { data, error } = await supabase.from('playbooks').insert({
+    const { error } = await supabase.from('playbooks').insert({
       workspace_id: currentWorkspace.id,
       name,
       type,
@@ -114,7 +158,6 @@ export default function PlaybooksPage() {
       channels: channels as any,
       sequence_json: sequence as any,
     } as any).select();
-    console.log('Playbook insert result:', { data, error });
     if (error) {
       toast({ title: 'Error creating playbook', description: error.message, variant: 'destructive' });
     } else {
@@ -147,7 +190,7 @@ export default function PlaybooksPage() {
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> New Playbook</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Create Playbook</DialogTitle>
             </DialogHeader>
@@ -196,44 +239,88 @@ export default function PlaybooksPage() {
                     <Plus className="mr-1 h-3 w-3" /> Add Step
                   </Button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {sequence.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-muted/50 rounded-lg p-3">
-                      <div className="flex flex-col gap-1">
-                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveStep(i, -1)} disabled={i === 0}>
-                          <ArrowUp className="h-3 w-3" />
-                        </Button>
-                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveStep(i, 1)} disabled={i === sequence.length - 1}>
-                          <ArrowDown className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <Badge variant="secondary" className="shrink-0">{s.step}</Badge>
-                      <Select value={s.channel} onValueChange={(v) => updateStep(i, 'channel', v)}>
-                        <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="sms">SMS</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        value={s.label}
-                        onChange={(e) => updateStep(i, 'label', e.target.value)}
-                        className="h-8 flex-1"
-                        placeholder="Step label"
-                      />
-                      <div className="flex items-center gap-1 shrink-0">
+                    <div key={i} className="bg-muted/50 rounded-lg p-3 space-y-3">
+                      {/* Step header */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col gap-1">
+                          <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveStep(i, -1)} disabled={i === 0}>
+                            <ArrowUp className="h-3 w-3" />
+                          </Button>
+                          <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => moveStep(i, 1)} disabled={i === sequence.length - 1}>
+                            <ArrowDown className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Badge variant="secondary" className="shrink-0">{s.step}</Badge>
+                        <Select value={s.channel} onValueChange={(v) => updateStep(i, 'channel', v)}>
+                          <SelectTrigger className="w-24 h-8"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="sms">SMS</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <Input
-                          type="number"
-                          value={s.delay_days}
-                          onChange={(e) => updateStep(i, 'delay_days', parseInt(e.target.value) || 0)}
-                          className="h-8 w-16 text-center"
-                          min={0}
+                          value={s.label}
+                          onChange={(e) => updateStep(i, 'label', e.target.value)}
+                          className="h-8 flex-1"
+                          placeholder="Step label"
                         />
-                        <span className="text-xs text-muted-foreground">days</span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Input
+                            type="number"
+                            value={s.delay_days}
+                            onChange={(e) => updateStep(i, 'delay_days', parseInt(e.target.value) || 0)}
+                            className="h-8 w-16 text-center"
+                            min={0}
+                          />
+                          <span className="text-xs text-muted-foreground">days</span>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeStep(i)} disabled={sequence.length <= 1}>
+                          <Trash2 className="h-3 w-3 text-muted-foreground" />
+                        </Button>
                       </div>
-                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeStep(i)} disabled={sequence.length <= 1}>
-                        <Trash2 className="h-3 w-3 text-muted-foreground" />
-                      </Button>
+
+                      {/* Custom content area */}
+                      <div className="pl-9 space-y-2">
+                        {s.channel === 'email' && (
+                          <div className="space-y-1">
+                            <Label className="text-xs">Subject Line</Label>
+                            <Input
+                              value={s.custom_subject || ''}
+                              onChange={(e) => updateStep(i, 'custom_subject', e.target.value)}
+                              placeholder="Leave empty for AI to generate per-lead, or write a custom subject"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        )}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">{s.channel === 'email' ? 'Email Body' : 'SMS Message'}</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => writeWithAI(i)}
+                              disabled={aiWritingIndex !== null}
+                            >
+                              {aiWritingIndex === i ? (
+                                <><Loader2 className="h-3 w-3 animate-spin" /> Writing...</>
+                              ) : (
+                                <><Sparkles className="h-3 w-3" /> Write with AI</>
+                              )}
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={s.custom_body || ''}
+                            onChange={(e) => updateStep(i, 'custom_body', e.target.value)}
+                            placeholder={`Leave empty for AI to auto-generate per lead, or write a custom ${s.channel === 'email' ? 'email' : 'SMS'}. Use {{first_name}}, {{company}} as placeholders.`}
+                            rows={3}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -260,6 +347,7 @@ export default function PlaybooksPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {playbooks.map(pb => {
             const steps = Array.isArray(pb.sequence_json) ? pb.sequence_json as SequenceStep[] : [];
+            const hasCustom = steps.some(s => s.custom_body);
             return (
               <Card key={pb.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setDetailPlaybook(pb)}>
                 <CardHeader className="pb-3">
@@ -282,6 +370,7 @@ export default function PlaybooksPage() {
                   <div className="flex gap-2 flex-wrap mb-3">
                     <Badge variant="secondary" className="capitalize">{pb.tone}</Badge>
                     <Badge variant="outline" className="capitalize">{pb.cta?.replace('_', ' ')}</Badge>
+                    {hasCustom && <Badge variant="secondary" className="text-xs">✍️ Custom templates</Badge>}
                   </div>
                   {steps.length > 0 && (
                     <div className="text-xs text-muted-foreground">
@@ -297,7 +386,7 @@ export default function PlaybooksPage() {
 
       {/* Playbook Detail Dialog */}
       <Dialog open={!!detailPlaybook} onOpenChange={() => setDetailPlaybook(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           {detailPlaybook && (
             <>
               <DialogHeader>
@@ -313,12 +402,26 @@ export default function PlaybooksPage() {
                   <p className="text-sm font-medium mb-2">Sequence</p>
                   <div className="space-y-2">
                     {(Array.isArray(detailPlaybook.sequence_json) ? detailPlaybook.sequence_json as SequenceStep[] : []).map((s, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-                        <Badge variant="secondary">{s.step}</Badge>
-                        <Badge variant={s.channel === 'email' ? 'default' : 'outline'} className="capitalize">{s.channel}</Badge>
-                        <span className="text-sm flex-1">{s.label}</span>
-                        {s.delay_days > 0 && (
-                          <span className="text-xs text-muted-foreground">+{s.delay_days}d</span>
+                      <div key={i} className="bg-muted/50 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary">{s.step}</Badge>
+                          <Badge variant={s.channel === 'email' ? 'default' : 'outline'} className="capitalize">{s.channel}</Badge>
+                          <span className="text-sm flex-1">{s.label}</span>
+                          {s.delay_days > 0 && (
+                            <span className="text-xs text-muted-foreground">+{s.delay_days}d</span>
+                          )}
+                        </div>
+                        {s.custom_subject && (
+                          <div className="pl-2 border-l-2 border-primary/30">
+                            <p className="text-xs text-muted-foreground">Subject:</p>
+                            <p className="text-sm">{s.custom_subject}</p>
+                          </div>
+                        )}
+                        {s.custom_body && (
+                          <div className="pl-2 border-l-2 border-primary/30">
+                            <p className="text-xs text-muted-foreground">Content:</p>
+                            <p className="text-sm whitespace-pre-wrap">{s.custom_body}</p>
+                          </div>
                         )}
                       </div>
                     ))}
