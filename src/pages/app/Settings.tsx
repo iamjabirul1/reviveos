@@ -78,6 +78,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="workspace">
         <TabsList>
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
+          <TabsTrigger value="business">Business Context</TabsTrigger>
           <TabsTrigger value="suppressions">Suppressions</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
