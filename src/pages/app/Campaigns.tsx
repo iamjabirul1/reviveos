@@ -214,16 +214,21 @@ export default function CampaignsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">{c.lead_count ?? 0} leads targeted</p>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {c.status === 'draft' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
                       <Play className="mr-1 h-3 w-3" /> Activate
                     </Button>
                   )}
                   {c.status === 'active' && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, 'paused')}>
-                      <Pause className="mr-1 h-3 w-3" /> Pause
-                    </Button>
+                    <>
+                      <Button size="sm" onClick={() => sendCampaign(c.id)}>
+                        <Send className="mr-1 h-3 w-3" /> Send
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => updateStatus(c.id, 'paused')}>
+                        <Pause className="mr-1 h-3 w-3" /> Pause
+                      </Button>
+                    </>
                   )}
                   {c.status === 'paused' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
