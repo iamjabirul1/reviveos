@@ -107,9 +107,9 @@ export default function PlaybooksPage() {
       type,
       tone,
       cta,
-      channels,
-      sequence_json: sequence,
-    });
+      channels: channels as any,
+      sequence_json: sequence as any,
+    } as any);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
