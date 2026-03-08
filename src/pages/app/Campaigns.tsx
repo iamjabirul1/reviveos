@@ -49,6 +49,8 @@ export default function CampaignsPage() {
   const [targetBucket, setTargetBucket] = useState('revive_now');
   const [scoreRange, setScoreRange] = useState([50, 100]);
   const [maxLeads, setMaxLeads] = useState(50);
+  const [matchingLeadCount, setMatchingLeadCount] = useState<number | null>(null);
+  const [leadsWithoutContact, setLeadsWithoutContact] = useState(0);
 
   useEffect(() => {
     if (currentWorkspace) {
@@ -56,6 +58,27 @@ export default function CampaignsPage() {
       fetchPlaybooks();
     }
   }, [currentWorkspace]);
+
+  // Live preview of matching leads when filters change
+  useEffect(() => {
+    if (!currentWorkspace || !open) return;
+    async function countLeads() {
+      const { count } = await supabase.from('leads').select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspace!.id)
+        .eq('revival_bucket', targetBucket as any)
+        .gte('revival_score', scoreRange[0])
+        .lte('revival_score', scoreRange[1]);
+      setMatchingLeadCount(count ?? 0);
+
+      // Check how many leads have no contact info
+      const { count: noContact } = await supabase.from('leads').select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspace!.id)
+        .is('email', null)
+        .is('phone', null);
+      setLeadsWithoutContact(noContact ?? 0);
+    }
+    countLeads();
+  }, [currentWorkspace, targetBucket, scoreRange, open]);
 
   async function fetchCampaigns() {
     if (!currentWorkspace) return;
@@ -253,10 +276,25 @@ export default function CampaignsPage() {
                 <Input type="number" value={maxLeads} onChange={(e) => setMaxLeads(parseInt(e.target.value) || 10)} min={1} max={500} />
               </div>
 
-              <p className="text-sm text-muted-foreground">
-                This will target leads matching your filters and generate AI draft messages using the selected playbook's tone and CTA.
-              </p>
-              <Button onClick={createCampaign} className="w-full" disabled={!name || !selectedPlaybookId || creating}>
+              {/* Live lead count preview */}
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-sm font-medium">
+                  {matchingLeadCount !== null ? (
+                    matchingLeadCount > 0 ? (
+                      <span className="text-success">{Math.min(matchingLeadCount, maxLeads)} leads will be targeted</span>
+                    ) : (
+                      <span className="text-destructive">0 leads match these filters</span>
+                    )
+                  ) : 'Counting matching leads...'}
+                </p>
+                {leadsWithoutContact > 0 && (
+                  <p className="text-xs text-warning">⚠ {leadsWithoutContact} leads have no email or phone and are auto-suppressed. Re-import with contact info to include them.</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  AI will deeply research each lead's company and craft hyper-personalized messages.
+                </p>
+              </div>
+              <Button onClick={createCampaign} className="w-full" disabled={!name || !selectedPlaybookId || creating || matchingLeadCount === 0}>
                 {creating ? 'Creating...' : 'Create & Generate Messages'}
               </Button>
             </div>
