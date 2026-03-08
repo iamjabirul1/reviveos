@@ -182,6 +182,18 @@ Respond with ONLY valid JSON in this exact format:
       }
     }
 
+    // Log AI usage
+    if (workspace_id) {
+      const userId = claimsData.claims.sub as string;
+      await sb.from("ai_usage_log").insert(
+        results.map((r: any) => ({
+          workspace_id,
+          user_id: userId,
+          function_name: "enrich-leads",
+        }))
+      );
+    }
+
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

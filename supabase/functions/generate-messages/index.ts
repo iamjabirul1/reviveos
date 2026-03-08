@@ -209,6 +209,19 @@ Respond with ONLY valid JSON:
       }
     }
 
+    // Log AI usage
+    if (workspace_id) {
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const userId = claimsData.claims.sub as string;
+      await sb.from("ai_usage_log").insert(
+        results.map((r: any) => ({
+          workspace_id,
+          user_id: userId,
+          function_name: "generate-messages",
+        }))
+      );
+    }
+
     return new Response(JSON.stringify({ messages: results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
