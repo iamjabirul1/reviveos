@@ -37,6 +37,7 @@ type Step = 'upload' | 'mapping' | 'importing' | 'done';
 
 export default function ImportPage() {
   const { currentWorkspace } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>('upload');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
