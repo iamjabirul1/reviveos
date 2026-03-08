@@ -8,6 +8,8 @@ interface Workspace {
   owner_user_id: string;
   plan: string;
   created_at: string;
+  business_context?: Record<string, any> | null;
+  onboarding_completed?: boolean;
 }
 
 interface WorkspaceContextType {

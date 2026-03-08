@@ -16,10 +16,34 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { leads, playbook_type, tone, cta } = await req.json();
+    const { leads, playbook_type, tone, cta, workspace_id } = await req.json();
 
     if (!leads || !Array.isArray(leads) || leads.length === 0) {
       throw new Error("No leads provided");
+    }
+
+    // Fetch workspace business context
+    let businessContextPrompt = "";
+    if (workspace_id) {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      const { data: ws } = await sb.from("workspaces").select("business_context").eq("id", workspace_id).single();
+      if (ws?.business_context) {
+        const bc = ws.business_context as any;
+        businessContextPrompt = `
+SENDER'S BUSINESS CONTEXT (write FROM this company's perspective):
+- Company: ${bc.company_name || "N/A"}
+- Industry: ${bc.industry || "N/A"}  
+- What they do: ${bc.description || "N/A"}
+- Target Audience: ${bc.target_audience || "N/A"}
+- Key Differentiators: ${bc.key_differentiators || "N/A"}
+- Preferred Tone: ${bc.preferred_tone || "friendly"}
+- Brand Voice Guidelines: ${bc.brand_voice || "N/A"}
+- Topics to AVOID: ${bc.avoid_topics || "None"}
+- Goals: ${(bc.goals || []).join(", ")}
+- Avg Deal Size: ${bc.avg_deal_size || "N/A"}
+- Sales Cycle: ${bc.sales_cycle || "N/A"}`;
+      }
     }
 
     const results = [];
@@ -41,6 +65,7 @@ DEEP RESEARCH DATA (use this heavily for personalization):
 - Timing Signal: ${enrichment.timing_signal || 'N/A'}` : '';
 
       const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
+${businessContextPrompt}
 
 RESEARCH PHASE (internal — do NOT include in output):
 Before writing, deeply analyze everything you know about:
