@@ -476,8 +476,8 @@ export default function Landing() {
                 {
                   name: 'Starter',
                   desc: 'For solopreneurs testing the waters',
-                  price: { monthly: 39, annual: 3131 },
-                  cta:Get Startedee',
+                  price: { monthly: 39, annual: 313131 },
+                  ctGet Startedtedee',
                   popular: false,
                   features: [
                     '500 leads',
