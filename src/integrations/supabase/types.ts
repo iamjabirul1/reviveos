@@ -354,6 +354,39 @@ export type Database = {
           },
         ]
       }
+      paypal_plans: {
+        Row: {
+          created_at: string
+          id: string
+          paypal_plan_id_annual: string | null
+          paypal_plan_id_monthly: string | null
+          paypal_product_id: string | null
+          plan_name: string
+          price_annual: number
+          price_monthly: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          paypal_plan_id_annual?: string | null
+          paypal_plan_id_monthly?: string | null
+          paypal_product_id?: string | null
+          plan_name: string
+          price_annual: number
+          price_monthly: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          paypal_plan_id_annual?: string | null
+          paypal_plan_id_monthly?: string | null
+          paypal_product_id?: string | null
+          plan_name?: string
+          price_annual?: number
+          price_monthly?: number
+        }
+        Relationships: []
+      }
       playbooks: {
         Row: {
           active: boolean | null
@@ -430,6 +463,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          billing_cycle: string
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          paypal_plan_id: string | null
+          paypal_subscription_id: string | null
+          plan_name: string
+          status: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          billing_cycle?: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
+          plan_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          billing_cycle?: string
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          paypal_plan_id?: string | null
+          paypal_subscription_id?: string | null
+          plan_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       suppressions: {
         Row: {
