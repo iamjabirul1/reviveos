@@ -696,6 +696,9 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          ai_suspended: boolean
+          ai_suspended_at: string | null
+          ai_suspended_reason: string | null
           business_context: Json | null
           created_at: string
           id: string
@@ -705,6 +708,9 @@ export type Database = {
           plan: string
         }
         Insert: {
+          ai_suspended?: boolean
+          ai_suspended_at?: string | null
+          ai_suspended_reason?: string | null
           business_context?: Json | null
           created_at?: string
           id?: string
@@ -714,6 +720,9 @@ export type Database = {
           plan?: string
         }
         Update: {
+          ai_suspended?: boolean
+          ai_suspended_at?: string | null
+          ai_suspended_reason?: string | null
           business_context?: Json | null
           created_at?: string
           id?: string
