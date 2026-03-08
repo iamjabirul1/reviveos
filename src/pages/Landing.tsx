@@ -30,8 +30,53 @@ const scaleIn = {
 };
 
 export default function Landing() {
+  const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [paypalPlans, setPaypalPlans] = useState<any[]>([]);
+  const [setupLoading, setSetupLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const { data, error } = await supabase.functions.invoke('paypal-config');
+        if (!error && data) {
+          setPaypalClientId(data.clientId);
+          setPaypalPlans(data.plans || []);
+        }
+      } catch (err) {
+        console.error('Failed to load PayPal config:', err);
+      }
+    }
+    fetchConfig();
+  }, []);
+
+  const handleSetupPlans = async () => {
+    setSetupLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please log in first to setup PayPal plans');
+        navigate('/login');
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('paypal-setup');
+      if (error) throw error;
+      toast.success('PayPal plans created successfully!');
+      // Refresh config
+      const { data: config } = await supabase.functions.invoke('paypal-config');
+      if (config) {
+        setPaypalClientId(config.clientId);
+        setPaypalPlans(config.plans || []);
+      }
+    } catch (err) {
+      console.error('Setup error:', err);
+      toast.error('Failed to create PayPal plans. Check console for details.');
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   return (
     <>
