@@ -218,6 +218,9 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
+      {!canAddCampaign(campaigns.length) && (
+        <LimitReached resource="Campaigns" current={campaigns.length} max={limits.maxCampaigns} upgradePlan={upgradePlan} />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Campaigns</h1>
