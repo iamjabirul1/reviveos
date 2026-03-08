@@ -101,11 +101,95 @@ export default function LeadsPage() {
     fetchLeads();
   }
 
+  async function enrichAllLeads() {
+    if (!currentWorkspace) return;
+    setEnriching(true);
+    toast({ title: 'Enriching leads...', description: 'AI is researching each lead\'s company and industry' });
+
+    const { data: allLeads } = await supabase.from('leads').select('*')
+      .eq('workspace_id', currentWorkspace.id)
+      .is('enriched_at' as any, null)
+      .not('company', 'is', null);
+
+    if (!allLeads || allLeads.length === 0) {
+      toast({ title: 'Nothing to enrich', description: 'All leads are already enriched or have no company info' });
+      setEnriching(false);
+      return;
+    }
+
+    // Process in batches of 5
+    const batchSize = 5;
+    let enriched = 0;
+    for (let i = 0; i < allLeads.length; i += batchSize) {
+      const batch = allLeads.slice(i, i + batchSize);
+      const { data, error } = await supabase.functions.invoke('enrich-leads', {
+        body: { leads: batch },
+      });
+
+      if (error) {
+        toast({ title: 'Enrichment error', description: error.message, variant: 'destructive' });
+        break;
+      }
+
+      if (data?.results) {
+        for (const result of data.results) {
+          if (result.enrichment) {
+            await supabase.from('leads').update({
+              enrichment_json: result.enrichment as any,
+              enriched_at: new Date().toISOString(),
+            } as any).eq('id', result.lead_id);
+            enriched++;
+          }
+        }
+      }
+    }
+
+    toast({ title: 'Enrichment complete', description: `${enriched} leads enriched with AI research` });
+    setEnriching(false);
+    fetchLeads();
+  }
+
+  async function enrichSingleLead(lead: Lead) {
+    setEnrichingLead(lead.id);
+    const { data, error } = await supabase.functions.invoke('enrich-leads', {
+      body: { leads: [lead] },
+    });
+
+    if (error) {
+      toast({ title: 'Enrichment error', description: error.message, variant: 'destructive' });
+      setEnrichingLead(null);
+      return;
+    }
+
+    const result = data?.results?.[0];
+    if (result?.enrichment) {
+      await supabase.from('leads').update({
+        enrichment_json: result.enrichment as any,
+        enriched_at: new Date().toISOString(),
+      } as any).eq('id', lead.id);
+
+      // Refresh the selected lead
+      const { data: updated } = await supabase.from('leads').select('*').eq('id', lead.id).maybeSingle();
+      if (updated) setSelectedLead(updated);
+      toast({ title: 'Lead enriched', description: `Research complete for ${lead.first_name}` });
+    } else {
+      toast({ title: 'Enrichment failed', description: result?.error || 'Could not research this lead', variant: 'destructive' });
+    }
+    setEnrichingLead(null);
+    fetchLeads();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <Button variant="outline" onClick={rescoreAll}>Re-score All</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={enrichAllLeads} disabled={enriching}>
+            {enriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {enriching ? 'Enriching...' : 'Enrich All'}
+          </Button>
+          <Button variant="outline" onClick={rescoreAll}>Re-score All</Button>
+        </div>
       </div>
 
       {/* Filters */}
