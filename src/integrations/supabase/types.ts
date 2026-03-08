@@ -528,23 +528,29 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          business_context: Json | null
           created_at: string
           id: string
           name: string
+          onboarding_completed: boolean | null
           owner_user_id: string
           plan: string
         }
         Insert: {
+          business_context?: Json | null
           created_at?: string
           id?: string
           name: string
+          onboarding_completed?: boolean | null
           owner_user_id: string
           plan?: string
         }
         Update: {
+          business_context?: Json | null
           created_at?: string
           id?: string
           name?: string
+          onboarding_completed?: boolean | null
           owner_user_id?: string
           plan?: string
         }
