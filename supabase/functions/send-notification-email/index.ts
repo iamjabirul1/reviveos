@@ -134,6 +134,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check notification preferences
+    const { data: prefs } = await supabaseAdmin
+      .from("notification_preferences")
+      .select("plan_limit_warnings, subscription_updates")
+      .eq("user_id", userId)
+      .eq("workspace_id", workspace_id)
+      .maybeSingle();
+
+    // Respect opt-out (default is opted-in if no record exists)
+    if (prefs) {
+      if (type === "plan_limit_warning" && !prefs.plan_limit_warnings) {
+        return new Response(JSON.stringify({ skipped: true, reason: "User opted out of plan limit warnings" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (type === "subscription_cancelled" && !prefs.subscription_updates) {
+        return new Response(JSON.stringify({ skipped: true, reason: "User opted out of subscription updates" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Get user email
     const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
     const userEmail = userData?.user?.email;

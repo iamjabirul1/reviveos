@@ -14,9 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Settings, Save, ShieldX, ScrollText, Building2, CreditCard,
-  Check, ArrowUpRight, AlertTriangle, Loader2,
+  Check, ArrowUpRight, AlertTriangle, Loader2, Bell,
 } from 'lucide-react';
 import BusinessContextForm from '@/components/BusinessContextForm';
+import NotificationPreferences from '@/components/NotificationPreferences';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
@@ -211,6 +212,7 @@ export default function SettingsPage() {
           <TabsTrigger value="workspace">Workspace</TabsTrigger>
           <TabsTrigger value="business">Business Context</TabsTrigger>
           <TabsTrigger value="suppressions">Suppressions</TabsTrigger>
+          <TabsTrigger value="notifications"><Bell className="mr-1.5 h-3.5 w-3.5" />Notifications</TabsTrigger>
           <TabsTrigger value="audit">Audit Log</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
@@ -456,6 +458,10 @@ export default function SettingsPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
+          <NotificationPreferences />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-4">
