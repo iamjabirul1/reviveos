@@ -53,7 +53,7 @@ export default function LeadsPage() {
       .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (bucketFilter !== 'all') {
-      query = query.eq('revival_bucket', bucketFilter);
+      query = query.eq('revival_bucket', bucketFilter as any);
     }
 
     const { data } = await query;
