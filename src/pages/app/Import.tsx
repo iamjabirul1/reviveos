@@ -337,7 +337,13 @@ export default function ImportPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Import Leads</h1>
+      {!canAddLeads(currentLeadCount) && (
+        <LimitReached resource="Leads" current={currentLeadCount} max={limits.maxLeads} upgradePlan={upgradePlan} />
+      )}
+      <div>
+        <h1 className="text-2xl font-bold">Import Leads</h1>
+        <p className="text-sm text-muted-foreground">{currentLeadCount.toLocaleString()} / {limits.maxLeads.toLocaleString()} leads used</p>
+      </div>
 
       {step === 'upload' && (
         <Card>
