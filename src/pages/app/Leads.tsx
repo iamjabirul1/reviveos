@@ -13,6 +13,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { scoreLead } from '@/lib/scoring';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
 
