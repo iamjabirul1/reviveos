@@ -455,6 +455,51 @@ export default function LeadsPage() {
                   )}
                 </div>
 
+                {/* CRM Outbound Sync */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 text-primary" /> CRM Sync
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={syncing}
+                      onClick={async () => {
+                        if (!currentWorkspace || !selectedLead) return;
+                        setSyncing(true);
+                        try {
+                          const { data, error } = await supabase.functions.invoke('crm-outbound-sync', {
+                            body: { workspace_id: currentWorkspace.id, lead_id: selectedLead.id },
+                          });
+                          if (error) throw error;
+                          const results = data?.results || [];
+                          const succeeded = results.filter((r: any) => r.success).map((r: any) => r.provider);
+                          const failed = results.filter((r: any) => !r.success);
+                          if (results.length === 0) {
+                            toast({ title: 'No CRM integrations', description: 'Connect a CRM in Settings → Integrations first.' });
+                          } else if (failed.length === 0) {
+                            toast({ title: 'Synced to CRM', description: `Updated: ${succeeded.join(', ')}` });
+                          } else {
+                            toast({
+                              title: 'Partial sync',
+                              description: `OK: ${succeeded.join(', ') || 'none'}. Failed: ${failed.map((f: any) => `${f.provider}: ${f.error}`).join('; ')}`,
+                              variant: 'destructive',
+                            });
+                          }
+                        } catch (err) {
+                          toast({ title: 'Sync failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+                        } finally {
+                          setSyncing(false);
+                        }
+                      }}
+                    >
+                      {syncing ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Syncing...</> : 'Push to CRM'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Push this lead's data to connected HubSpot, GoHighLevel, or Shopify.</p>
+                </div>
+
                 <div>
                   <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="text-sm">{selectedLead.notes ?? 'None'}</p>
