@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
                     </a>
                   </div>
                   <p style="font-size: 12px; color: #999; margin-top: 24px; text-align: center;">
-                    If you believe this was done in error, reply to this email or contact support@leadgenie.app
+                    If you believe this was done in error, reply to this email or contact support@reviveos.com
                   </p>
                 </div>
               `,
