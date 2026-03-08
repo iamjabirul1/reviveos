@@ -95,7 +95,12 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label>Plan</Label>
-                <Badge variant="secondary" className="capitalize">{currentWorkspace?.plan ?? 'free'}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="capitalize">{currentWorkspace?.plan ?? 'free'}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {currentWorkspace?.plan === 'pro' ? '5,000 leads' : currentWorkspace?.plan === 'enterprise' ? '50,000 leads' : '500 leads'}
+                  </span>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Owner</Label>

@@ -87,6 +87,24 @@ export default function ImportPage() {
 
   async function runImport() {
     if (!currentWorkspace) return;
+
+    // Plan enforcement
+    const planLimits: Record<string, number> = { free: 500, pro: 5000, enterprise: 50000 };
+    const limit = planLimits[currentWorkspace.plan] ?? 500;
+    const { count: currentCount } = await supabase
+      .from('leads')
+      .select('*', { count: 'exact', head: true })
+      .eq('workspace_id', currentWorkspace.id);
+
+    if ((currentCount ?? 0) + csvData.length > limit) {
+      toast({
+        title: 'Plan limit reached',
+        description: `Your ${currentWorkspace.plan} plan allows ${limit} leads. You have ${currentCount ?? 0} and are trying to import ${csvData.length}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setStep('importing');
     let imported = 0, duplicates = 0, errors = 0;
     const wsId = currentWorkspace.id;
