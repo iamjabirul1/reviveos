@@ -19,6 +19,7 @@ import CampaignsPage from "./pages/app/Campaigns";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
 import SettingsPage from "./pages/app/Settings";
+import AdminDashboard from "./pages/app/AdminDashboard";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Onboarding from "./pages/Onboarding";
