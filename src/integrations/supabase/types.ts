@@ -282,6 +282,7 @@ export type Database = {
           delivered_at: string | null
           id: string
           lead_id: string
+          opened_at: string | null
           replied_at: string | null
           sent_at: string | null
           subject: string | null
@@ -299,6 +300,7 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           lead_id: string
+          opened_at?: string | null
           replied_at?: string | null
           sent_at?: string | null
           subject?: string | null
@@ -316,6 +318,7 @@ export type Database = {
           delivered_at?: string | null
           id?: string
           lead_id?: string
+          opened_at?: string | null
           replied_at?: string | null
           sent_at?: string | null
           subject?: string | null
