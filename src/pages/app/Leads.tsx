@@ -68,7 +68,7 @@ export default function LeadsPage() {
   });
 
   async function rescoreAll() {
-    if (!currentWorkspace) return;
+    if (!currentWorkspace || !user) return;
     toast({ title: 'Rescoring...', description: 'Updating all lead scores' });
     const { data: allLeads } = await supabase.from('leads').select('*').eq('workspace_id', currentWorkspace.id);
     if (!allLeads) return;
@@ -84,7 +84,16 @@ export default function LeadsPage() {
         suggested_cta: result.suggested_cta,
       }).eq('id', lead.id);
     }
-    toast({ title: 'Done', description: 'All leads rescored' });
+
+    // Log activity
+    await supabase.from('activity_logs').insert({
+      workspace_id: currentWorkspace.id,
+      user_id: user?.id,
+      event_type: 'leads_rescored',
+      payload_json: { count: allLeads.length },
+    });
+
+    toast({ title: 'Done', description: `${allLeads.length} leads rescored` });
     fetchLeads();
   }
 
