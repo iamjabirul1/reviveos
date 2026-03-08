@@ -63,10 +63,28 @@ Deno.serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const { leads } = await req.json();
+    const { leads, workspace_id } = await req.json();
 
     if (!leads || !Array.isArray(leads) || leads.length === 0) {
       throw new Error("No leads provided");
+    }
+
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Rate limit check
+    if (workspace_id) {
+      const { data: rateLimit } = await sb.rpc("check_ai_rate_limit", {
+        _workspace_id: workspace_id,
+        _function_name: "enrich-leads",
+      });
+      if (rateLimit && !rateLimit.allowed) {
+        return new Response(JSON.stringify({
+          error: "Daily AI usage limit reached",
+          daily_limit: rateLimit.daily_limit,
+          used_today: rateLimit.used_today,
+          plan: rateLimit.plan,
+        }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const results = [];
