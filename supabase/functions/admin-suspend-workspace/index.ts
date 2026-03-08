@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
                     <p style="font-size: 15px; color: #0369a1; margin: 0 0 12px 0;">
                       <strong>Need help? Contact our support team to resolve this.</strong>
                     </p>
-                    <a href="mailto:support@leadgenie.app" style="display: inline-block; background: #0284c7; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
+                    <a href="mailto:support@reviveos.com" style="display: inline-block; background: #0284c7; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">
                       Contact Support
                     </a>
                   </div>
