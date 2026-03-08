@@ -227,6 +227,124 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* Speed-to-Lead Stats — Expert-cited data */}
+        <section className="py-20 border-t">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.div variants={fadeUp}>
+                <Badge variant="outline" className="mb-4 gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-primary" />
+                  Speed to Lead
+                </Badge>
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                Every minute you wait, you lose money
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Industry research consistently shows that response speed is the #1 predictor of lead conversion. Here's what the data says:
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="grid md:grid-cols-4 gap-5 mb-14"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              {[
+                { stat: '391%', desc: 'higher close rate when you respond within 60 seconds', source: 'Lead Connect Study', color: 'text-primary' },
+                { stat: '21×', desc: 'more likely to enter the sales process with a 5-min response vs. 30 min', source: 'InsideSales.com / MIT', color: 'text-primary' },
+                { stat: '80%', desc: 'drop in lead qualification chances after just 5 minutes of delay', source: 'Harvard Business Review', color: 'text-destructive' },
+                { stat: '78%', desc: 'of customers buy from the first company that responds to them', source: 'Lead Connect Study', color: 'text-primary' },
+              ].map((item, i) => (
+                <motion.div key={i} variants={scaleIn}>
+                  <Card className="h-full text-center hover:shadow-lg transition-shadow border-2 hover:border-primary/20">
+                    <CardContent className="pt-8 pb-6 px-5">
+                      <p className={`text-4xl md:text-5xl font-black mb-3 ${item.color}`}>{item.stat}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed mb-3">{item.desc}</p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">{item.source}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Expert quotes */}
+            <motion.div
+              className="grid md:grid-cols-2 gap-6"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              <motion.div variants={fadeUp}>
+                <Card className="h-full bg-primary/5 border-primary/10">
+                  <CardContent className="pt-6 pb-5 px-6">
+                    <Quote className="h-8 w-8 text-primary/30 mb-3" />
+                    <p className="text-sm leading-relaxed mb-4 italic text-foreground">
+                      "The fortune is in the follow-up. Most businesses leave 80% of their revenue on the table by not re-engaging leads who said 'not right now.' Speed and persistence are the two biggest levers."
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">AH</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Alex Hormozi</p>
+                        <p className="text-xs text-muted-foreground">Founder, Acquisition.com — $200M+ portfolio</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={fadeUp}>
+                <Card className="h-full bg-primary/5 border-primary/10">
+                  <CardContent className="pt-6 pb-5 px-6">
+                    <Quote className="h-8 w-8 text-primary/30 mb-3" />
+                    <p className="text-sm leading-relaxed mb-4 italic text-foreground">
+                      "35-50% of sales go to the vendor that responds first. Yet the average B2B lead response time is 42 hours. This gap is where millions in revenue are lost every year."
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">DR</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">Dr. James Oldroyd</p>
+                        <p className="text-xs text-muted-foreground">MIT Lead Response Study — cited by Harvard Business Review</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+
+            {/* Brand logos bar */}
+            <motion.div
+              className="mt-14 text-center"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={fadeUp}
+            >
+              <p className="text-xs uppercase tracking-widest text-muted-foreground/50 font-medium mb-6">
+                Research cited by leading organizations
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-8 text-muted-foreground/40">
+                {['Harvard Business Review', 'MIT', 'Salesforce', 'HubSpot', 'Gartner'].map((name) => (
+                  <span key={name} className="text-sm font-semibold tracking-wide">{name}</span>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
         {/* How It Works */}
         <section id="how-it-works" className="py-20 border-t">
           <div className="container mx-auto px-4 max-w-5xl">
