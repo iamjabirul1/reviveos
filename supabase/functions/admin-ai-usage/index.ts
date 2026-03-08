@@ -95,11 +95,29 @@ Deno.serve(async (req) => {
         workspace_id: wsId,
         workspace_name: wsMap[wsId]?.name || "Unknown",
         plan: wsMap[wsId]?.plan || "free",
+        ai_suspended: wsMap[wsId]?.ai_suspended || false,
+        ai_suspended_reason: wsMap[wsId]?.ai_suspended_reason || null,
         total_calls: stats.total,
         by_function: stats.by_function,
         by_day: stats.by_day,
       }))
       .sort((a, b) => b.total_calls - a.total_calls);
+
+    // Also include workspaces with no usage but that are suspended
+    const suspendedNoUsage = (workspaces ?? [])
+      .filter((ws) => ws.ai_suspended && !perWorkspace[ws.id])
+      .map((ws) => ({
+        workspace_id: ws.id,
+        workspace_name: ws.name,
+        plan: ws.plan,
+        ai_suspended: true,
+        ai_suspended_reason: ws.ai_suspended_reason,
+        total_calls: 0,
+        by_function: {},
+        by_day: {},
+      }));
+
+    const allWorkspaceStats = [...workspaceStats, ...suspendedNoUsage];
 
     // Daily totals across all workspaces
     const dailyTotals: Record<string, number> = {};
