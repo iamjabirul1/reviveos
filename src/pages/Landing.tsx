@@ -663,8 +663,31 @@ export default function Landing() {
             </motion.div>
           </div>
         </section>
+        </PayPalPricingProvider>
+        ) : (
+        <section id="pricing" className="py-20 border-t">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.div variants={fadeUp}>
+                <Badge variant="outline" className="mb-4">Simple Pricing</Badge>
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                One recovered deal pays for a year
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg mb-8">
+                Loading pricing...
+              </motion.p>
+            </motion.div>
+          </div>
+        </section>
+        )}
 
-        {/* FAQ */}
         <section id="faq" className="py-20 border-t bg-muted/30">
           <div className="container mx-auto px-4 max-w-3xl">
             <motion.div
