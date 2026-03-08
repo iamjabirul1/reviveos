@@ -31,11 +31,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const TWILIO_PHONE_NUMBER = Deno.env.get("TWILIO_PHONE_NUMBER");
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`;
@@ -45,7 +40,24 @@ Deno.serve(async (req) => {
       throw new Error("campaign_id and workspace_id are required");
     }
 
-    // Fetch ALL approved unsent messages (email + sms)
+    // Fetch workspace-specific integration credentials
+    const { data: integrations } = await supabase
+      .from("workspace_integrations")
+      .select("provider, credentials, is_active")
+      .eq("workspace_id", workspace_id)
+      .eq("is_active", true);
+
+    const integrationMap: Record<string, Record<string, string>> = {};
+    for (const i of integrations || []) {
+      integrationMap[i.provider] = i.credentials as Record<string, string>;
+    }
+
+    // Resolve credentials: workspace-level first, then fall back to global env vars
+    const emailCreds = resolveEmailCreds(integrationMap);
+    const smsCreds = resolveSmsCreds(integrationMap);
+    const whatsappCreds = resolveWhatsAppCreds(integrationMap);
+
+    // Fetch ALL approved unsent messages
     const { data: messages, error: fetchError } = await supabase
       .from("messages")
       .select("*, leads!inner(email, phone, first_name, last_name)")
@@ -69,108 +81,33 @@ Deno.serve(async (req) => {
     for (const msg of messages) {
       const lead = msg as any;
       const channel = msg.channel || "email";
+      const leadPhone = lead.leads?.phone;
+
+      // Determine if WhatsApp
+      const isWhatsApp = channel === "sms" && leadPhone?.startsWith("whatsapp:");
 
       if (channel === "email") {
-        if (!RESEND_API_KEY) {
+        const result = await sendEmail(msg, lead, emailCreds, trackingBaseUrl);
+        if (result.success) {
+          await supabase.from("messages")
+            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
+            .eq("id", msg.id);
+          sentCount++;
+        } else {
           failCount++;
-          errors.push(`Lead ${msg.lead_id}: RESEND_API_KEY not configured`);
-          continue;
+          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
         }
-        const leadEmail = lead.leads?.email;
-        if (!leadEmail) {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: no email address`);
-          continue;
-        }
-
-        const openPixelUrl = `${trackingBaseUrl}?mid=${msg.id}&action=open`;
-        const htmlBody = convertToTrackedHtml(msg.body, msg.id, trackingBaseUrl, openPixelUrl);
-
-        try {
-          const res = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${RESEND_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "ReviveOS <noreply@reviveos.com>",
-              to: [leadEmail],
-              subject: msg.subject || "Quick follow-up",
-              text: msg.body,
-              html: htmlBody,
-            }),
-          });
-
-          if (res.ok) {
-            await supabase
-              .from("messages")
-              .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-              .eq("id", msg.id);
-            sentCount++;
-          } else {
-            const errBody = await res.text();
-            failCount++;
-            errors.push(`Lead ${msg.lead_id}: Resend error — ${errBody}`);
-          }
-        } catch (sendErr) {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${sendErr instanceof Error ? sendErr.message : "Unknown send error"}`);
-        }
-
       } else if (channel === "sms") {
-        // SMS via Twilio
-        if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+        const creds = isWhatsApp ? whatsappCreds : smsCreds;
+        const result = await sendSms(msg, lead, creds, isWhatsApp);
+        if (result.success) {
+          await supabase.from("messages")
+            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
+            .eq("id", msg.id);
+          sentCount++;
+        } else {
           failCount++;
-          errors.push(`Lead ${msg.lead_id}: Twilio credentials not configured`);
-          continue;
-        }
-
-        const leadPhone = lead.leads?.phone;
-        if (!leadPhone) {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: no phone number`);
-          continue;
-        }
-
-        // Determine if WhatsApp (phone starts with whatsapp: prefix or we detect it)
-        const isWhatsApp = leadPhone.startsWith("whatsapp:");
-        const toNumber = isWhatsApp ? leadPhone : leadPhone;
-        const fromNumber = isWhatsApp ? `whatsapp:${TWILIO_PHONE_NUMBER}` : TWILIO_PHONE_NUMBER;
-
-        try {
-          const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
-          const basicAuth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-
-          const formData = new URLSearchParams();
-          formData.append("To", toNumber);
-          formData.append("From", fromNumber);
-          formData.append("Body", msg.body);
-
-          const res = await fetch(twilioUrl, {
-            method: "POST",
-            headers: {
-              "Authorization": `Basic ${basicAuth}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: formData.toString(),
-          });
-
-          const resBody = await res.json();
-
-          if (res.ok || resBody.sid) {
-            await supabase
-              .from("messages")
-              .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-              .eq("id", msg.id);
-            sentCount++;
-          } else {
-            failCount++;
-            errors.push(`Lead ${msg.lead_id}: Twilio error — ${resBody.message || JSON.stringify(resBody)}`);
-          }
-        } catch (sendErr) {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${sendErr instanceof Error ? sendErr.message : "Unknown SMS error"}`);
+          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
         }
       }
     }
@@ -210,11 +147,128 @@ Deno.serve(async (req) => {
   }
 });
 
+// --- Credential resolution: workspace-level → global env fallback ---
+
+interface EmailCreds {
+  api_key: string;
+  from_email: string;
+  from_name: string;
+}
+
+interface SmsCreds {
+  account_sid: string;
+  auth_token: string;
+  phone_number: string;
+}
+
+function resolveEmailCreds(integrations: Record<string, Record<string, string>>): EmailCreds | null {
+  const ws = integrations["resend"];
+  if (ws?.api_key) {
+    return { api_key: ws.api_key, from_email: ws.from_email || "noreply@reviveos.com", from_name: ws.from_name || "ReviveOS" };
+  }
+  const globalKey = Deno.env.get("RESEND_API_KEY");
+  if (globalKey) {
+    return { api_key: globalKey, from_email: "noreply@reviveos.com", from_name: "ReviveOS" };
+  }
+  return null;
+}
+
+function resolveSmsCreds(integrations: Record<string, Record<string, string>>): SmsCreds | null {
+  const ws = integrations["twilio"];
+  if (ws?.account_sid && ws?.auth_token) {
+    return { account_sid: ws.account_sid, auth_token: ws.auth_token, phone_number: ws.phone_number || "" };
+  }
+  const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const token = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const phone = Deno.env.get("TWILIO_PHONE_NUMBER");
+  if (sid && token) return { account_sid: sid, auth_token: token, phone_number: phone || "" };
+  return null;
+}
+
+function resolveWhatsAppCreds(integrations: Record<string, Record<string, string>>): SmsCreds | null {
+  const ws = integrations["whatsapp"];
+  if (ws?.account_sid && ws?.auth_token) {
+    return { account_sid: ws.account_sid, auth_token: ws.auth_token, phone_number: ws.whatsapp_number || "" };
+  }
+  // Fall back to twilio creds with whatsapp prefix
+  return resolveSmsCreds(integrations);
+}
+
+// --- Send functions ---
+
+async function sendEmail(
+  msg: any, lead: any, creds: EmailCreds | null, trackingBaseUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!creds) return { success: false, error: "Email not configured (no Resend API key)" };
+
+  const leadEmail = lead.leads?.email;
+  if (!leadEmail) return { success: false, error: "No email address" };
+
+  const openPixelUrl = `${trackingBaseUrl}?mid=${msg.id}&action=open`;
+  const htmlBody = convertToTrackedHtml(msg.body, msg.id, trackingBaseUrl, openPixelUrl);
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${creds.api_key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: `${creds.from_name} <${creds.from_email}>`,
+        to: [leadEmail],
+        subject: msg.subject || "Quick follow-up",
+        text: msg.body,
+        html: htmlBody,
+      }),
+    });
+
+    if (res.ok) return { success: true };
+    const errBody = await res.text();
+    return { success: false, error: `Resend error — ${errBody}` };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown send error" };
+  }
+}
+
+async function sendSms(
+  msg: any, lead: any, creds: SmsCreds | null, isWhatsApp: boolean
+): Promise<{ success: boolean; error?: string }> {
+  if (!creds) return { success: false, error: `${isWhatsApp ? "WhatsApp" : "SMS"} not configured (no Twilio credentials)` };
+
+  const leadPhone = lead.leads?.phone;
+  if (!leadPhone) return { success: false, error: "No phone number" };
+
+  const toNumber = isWhatsApp ? leadPhone : leadPhone;
+  const fromNumber = isWhatsApp ? `whatsapp:${creds.phone_number}` : creds.phone_number;
+
+  if (!fromNumber || fromNumber === "whatsapp:") {
+    return { success: false, error: "No from phone number configured" };
+  }
+
+  try {
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${creds.account_sid}/Messages.json`;
+    const basicAuth = btoa(`${creds.account_sid}:${creds.auth_token}`);
+
+    const formData = new URLSearchParams();
+    formData.append("To", toNumber);
+    formData.append("From", fromNumber);
+    formData.append("Body", msg.body);
+
+    const res = await fetch(twilioUrl, {
+      method: "POST",
+      headers: { Authorization: `Basic ${basicAuth}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: formData.toString(),
+    });
+
+    const resBody = await res.json();
+
+    if (res.ok || resBody.sid) return { success: true };
+    return { success: false, error: `Twilio error — ${resBody.message || JSON.stringify(resBody)}` };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown SMS error" };
+  }
+}
+
 function convertToTrackedHtml(
-  body: string,
-  messageId: string,
-  trackingBaseUrl: string,
-  openPixelUrl: string
+  body: string, messageId: string, trackingBaseUrl: string, openPixelUrl: string
 ): string {
   let html = body
     .split("\n\n")
