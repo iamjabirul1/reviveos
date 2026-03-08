@@ -1,9 +1,16 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Zap, ArrowRight, BarChart3, Shield, Clock, Users, CheckCircle } from 'lucide-react';
 
 export default function Landing() {
   return (
+    <>
+      <Helmet>
+        <title>ReviveOS — Dormant Revenue Recovery OS | Win Back Dead Pipeline Leads</title>
+        <meta name="description" content="ReviveOS scores your stale leads, drafts context-aware win-back messages, and books meetings — all with human approval controls. Recover revenue from your dead pipeline in minutes." />
+        <link rel="canonical" href="https://reviveos.com/" />
+      </Helmet>
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-50">
