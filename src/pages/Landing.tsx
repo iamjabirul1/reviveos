@@ -595,11 +595,22 @@ export default function Landing() {
                           </p>
                         )}
                       </div>
-                      <Link to="/signup">
-                        <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
-                          {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
+                      {paypalClientId && paypalPlans.length > 0 ? (
+                        <div className="mb-6">
+                          <PayPalSubscribeButton
+                            planName={plan.name}
+                            billingCycle={billingCycle}
+                            plans={paypalPlans}
+                            onSetupRequired={handleSetupPlans}
+                          />
+                        </div>
+                      ) : (
+                        <Link to="/signup">
+                          <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
+                            {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
                       <div className="space-y-3">
                         {plan.features.map((f, j) => (
                           <div key={j} className="flex items-start gap-2 text-sm">
