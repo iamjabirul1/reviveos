@@ -80,7 +80,7 @@ export default function Dashboard() {
   async function fetchAll() {
     if (!currentWorkspace) return;
     const wsId = currentWorkspace.id;
-
+    try {
     const [
       totalRes, reviveRes, reviewRes, nurtureRes, suppressRes,
       sentRes, deliveredRes, openedRes, clickedRes, repliedRes,
@@ -131,6 +131,10 @@ export default function Dashboard() {
     setRecentActivity((activityRes.data ?? []) as RecentActivity[]);
     setCampaigns((campaignsRes.data ?? []) as CampaignSummary[]);
     setLoading(false);
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setLoading(false);
+    }
   }
 
   const pct = (n: number, d: number) => d === 0 ? 0 : Math.round((n / d) * 100);
@@ -176,8 +180,35 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-7 w-40 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-64 bg-muted animate-pulse rounded mt-2" />
+          </div>
+          <div className="h-9 w-36 bg-muted animate-pulse rounded" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <Card key={i}>
+              <CardContent className="p-5 space-y-3">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                <div className="h-8 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {[1,2].map(i => (
+            <Card key={i}>
+              <CardContent className="p-5 space-y-3">
+                <div className="h-5 w-32 bg-muted animate-pulse rounded" />
+                <div className="h-40 w-full bg-muted animate-pulse rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

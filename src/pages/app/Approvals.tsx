@@ -38,15 +38,22 @@ export default function ApprovalsPage() {
 
   async function fetchMessages() {
     if (!currentWorkspace) return;
-    const { data } = await supabase
-      .from('messages')
-      .select('*, lead:leads(first_name, last_name, email, company, revival_score)')
-      .eq('workspace_id', currentWorkspace.id)
-      .eq('approval_status', 'pending')
-      .order('created_at', { ascending: true });
-    
-    setMessages((data ?? []) as unknown as MessageWithLead[]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*, lead:leads(first_name, last_name, email, company, revival_score)')
+        .eq('workspace_id', currentWorkspace.id)
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      setMessages((data ?? []) as unknown as MessageWithLead[]);
+    } catch (err) {
+      console.error('Approvals fetch error:', err);
+      toast({ title: 'Error loading approvals', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   }
 
   const current = messages[currentIndex];

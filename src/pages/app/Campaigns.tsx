@@ -85,9 +85,16 @@ export default function CampaignsPage() {
 
   async function fetchCampaigns() {
     if (!currentWorkspace) return;
-    const { data } = await supabase.from('campaigns').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: false });
-    setCampaigns((data ?? []) as Campaign[]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.from('campaigns').select('*').eq('workspace_id', currentWorkspace.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      setCampaigns((data ?? []) as Campaign[]);
+    } catch (err) {
+      console.error('Campaigns fetch error:', err);
+      toast({ title: 'Error loading campaigns', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function fetchPlaybooks() {
