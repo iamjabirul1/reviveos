@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
 import { scoreLead } from '@/lib/scoring';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,6 +40,8 @@ export default function LeadsPage() {
   const [bucketFilter, setBucketFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
   const pageSize = 25;
 
   useEffect(() => {
@@ -99,11 +101,95 @@ export default function LeadsPage() {
     fetchLeads();
   }
 
+  async function enrichAllLeads() {
+    if (!currentWorkspace) return;
+    setEnriching(true);
+    toast({ title: 'Enriching leads...', description: 'AI is researching each lead\'s company and industry' });
+
+    const { data: allLeads } = await supabase.from('leads').select('*')
+      .eq('workspace_id', currentWorkspace.id)
+      .is('enriched_at' as any, null)
+      .not('company', 'is', null);
+
+    if (!allLeads || allLeads.length === 0) {
+      toast({ title: 'Nothing to enrich', description: 'All leads are already enriched or have no company info' });
+      setEnriching(false);
+      return;
+    }
+
+    // Process in batches of 5
+    const batchSize = 5;
+    let enriched = 0;
+    for (let i = 0; i < allLeads.length; i += batchSize) {
+      const batch = allLeads.slice(i, i + batchSize);
+      const { data, error } = await supabase.functions.invoke('enrich-leads', {
+        body: { leads: batch },
+      });
+
+      if (error) {
+        toast({ title: 'Enrichment error', description: error.message, variant: 'destructive' });
+        break;
+      }
+
+      if (data?.results) {
+        for (const result of data.results) {
+          if (result.enrichment) {
+            await supabase.from('leads').update({
+              enrichment_json: result.enrichment as any,
+              enriched_at: new Date().toISOString(),
+            } as any).eq('id', result.lead_id);
+            enriched++;
+          }
+        }
+      }
+    }
+
+    toast({ title: 'Enrichment complete', description: `${enriched} leads enriched with AI research` });
+    setEnriching(false);
+    fetchLeads();
+  }
+
+  async function enrichSingleLead(lead: Lead) {
+    setEnrichingLead(lead.id);
+    const { data, error } = await supabase.functions.invoke('enrich-leads', {
+      body: { leads: [lead] },
+    });
+
+    if (error) {
+      toast({ title: 'Enrichment error', description: error.message, variant: 'destructive' });
+      setEnrichingLead(null);
+      return;
+    }
+
+    const result = data?.results?.[0];
+    if (result?.enrichment) {
+      await supabase.from('leads').update({
+        enrichment_json: result.enrichment as any,
+        enriched_at: new Date().toISOString(),
+      } as any).eq('id', lead.id);
+
+      // Refresh the selected lead
+      const { data: updated } = await supabase.from('leads').select('*').eq('id', lead.id).maybeSingle();
+      if (updated) setSelectedLead(updated);
+      toast({ title: 'Lead enriched', description: `Research complete for ${lead.first_name}` });
+    } else {
+      toast({ title: 'Enrichment failed', description: result?.error || 'Could not research this lead', variant: 'destructive' });
+    }
+    setEnrichingLead(null);
+    fetchLeads();
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <Button variant="outline" onClick={rescoreAll}>Re-score All</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={enrichAllLeads} disabled={enriching}>
+            {enriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {enriching ? 'Enriching...' : 'Enrich All'}
+          </Button>
+          <Button variant="outline" onClick={rescoreAll}>Re-score All</Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -241,6 +327,109 @@ export default function LeadsPage() {
                   <p className="text-sm text-muted-foreground">Suggested CTA</p>
                   <p className="capitalize">{selectedLead.suggested_cta?.replace('_', ' ') ?? '—'}</p>
                 </div>
+
+                {/* AI Enrichment Section */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" /> AI Research
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => enrichSingleLead(selectedLead)}
+                      disabled={enrichingLead === selectedLead.id}
+                    >
+                      {enrichingLead === selectedLead.id ? (
+                        <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Researching...</>
+                      ) : (selectedLead as any).enriched_at ? 'Re-enrich' : 'Enrich'}
+                    </Button>
+                  </div>
+
+                  {(selectedLead as any).enrichment_json ? (
+                    <div className="space-y-3">
+                      {(() => {
+                        const e = (selectedLead as any).enrichment_json;
+                        return (
+                          <>
+                            <Card className="bg-muted/50">
+                              <CardContent className="pt-4 space-y-2">
+                                <p className="text-xs font-medium text-muted-foreground">Company Summary</p>
+                                <p className="text-sm">{e.company_summary}</p>
+                              </CardContent>
+                            </Card>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Industry</p>
+                                <p className="text-sm font-medium">{e.industry}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Size</p>
+                                <p className="text-sm font-medium capitalize">{e.company_size_estimate}</p>
+                              </div>
+                            </div>
+                            {e.pain_points?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Pain Points</p>
+                                <ul className="text-sm space-y-1">
+                                  {e.pain_points.map((p: string, i: number) => (
+                                    <li key={i} className="flex gap-2"><span className="text-destructive">•</span> {p}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            {e.personalization_hooks?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Personalization Hooks</p>
+                                <ul className="text-sm space-y-1">
+                                  {e.personalization_hooks.map((h: string, i: number) => (
+                                    <li key={i} className="flex gap-2"><span className="text-primary">💡</span> {h}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <Card className="bg-primary/5 border-primary/20">
+                              <CardContent className="pt-4">
+                                <p className="text-xs font-medium text-primary mb-1">Best Outreach Angle</p>
+                                <p className="text-sm font-medium">{e.best_outreach_angle}</p>
+                              </CardContent>
+                            </Card>
+                            {e.timing_signal && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Timing Signal</p>
+                                <p className="text-sm">{e.timing_signal}</p>
+                              </div>
+                            )}
+                            {e.decision_maker_profile && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Decision-Maker Profile</p>
+                                <p className="text-sm">{e.decision_maker_profile}</p>
+                              </div>
+                            )}
+                            {e.recent_trends?.length > 0 && (
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Industry Trends</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {e.recent_trends.map((t: string, i: number) => (
+                                    <Badge key={i} variant="secondary" className="text-xs">{t}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {(selectedLead as any).enriched_at && (
+                              <p className="text-xs text-muted-foreground">
+                                Enriched {new Date((selectedLead as any).enriched_at).toLocaleDateString()}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Not yet enriched. Click "Enrich" to run AI research on this lead's company.</p>
+                  )}
+                </div>
+
                 <div>
                   <p className="text-sm text-muted-foreground">Notes</p>
                   <p className="text-sm">{selectedLead.notes ?? 'None'}</p>

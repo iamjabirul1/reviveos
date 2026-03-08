@@ -181,6 +181,8 @@ export type Database = {
           created_at: string
           do_not_contact: boolean | null
           email: string | null
+          enriched_at: string | null
+          enrichment_json: Json | null
           first_name: string | null
           id: string
           jurisdiction: string | null
@@ -210,6 +212,8 @@ export type Database = {
           created_at?: string
           do_not_contact?: boolean | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_json?: Json | null
           first_name?: string | null
           id?: string
           jurisdiction?: string | null
@@ -239,6 +243,8 @@ export type Database = {
           created_at?: string
           do_not_contact?: boolean | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_json?: Json | null
           first_name?: string | null
           id?: string
           jurisdiction?: string | null
