@@ -187,11 +187,25 @@ export default function PlaybooksPage() {
 
   return (
     <div className="space-y-6">
+      {!canAddPlaybook(playbooks.length) && (
+        <LimitReached resource="Playbooks" current={playbooks.length} max={limits.maxPlaybooks} upgradePlan={upgradePlan} />
+      )}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Playbooks</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <div>
+          <h1 className="text-2xl font-bold">Playbooks</h1>
+          <p className="text-sm text-muted-foreground">
+            {playbooks.length}{limits.maxPlaybooks !== 'unlimited' ? ` / ${limits.maxPlaybooks}` : ''} playbooks
+          </p>
+        </div>
+        <Dialog open={open} onOpenChange={(o) => {
+          if (o && !canAddPlaybook(playbooks.length)) {
+            toast({ title: 'Playbook limit reached', description: 'Upgrade your plan to create more playbooks.', variant: 'destructive' });
+            return;
+          }
+          setOpen(o);
+        }}>
           <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> New Playbook</Button>
+            <Button disabled={!canAddPlaybook(playbooks.length)}><Plus className="mr-2 h-4 w-4" /> New Playbook</Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
