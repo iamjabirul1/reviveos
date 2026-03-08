@@ -131,7 +131,7 @@ export function usePayPalPlans() {
         .select("*");
 
       if (!error && data) {
-        setPlans(data as PayPalPlan[]);
+        setPlans(data as unknown as PayPalPlan[]);
       }
       setLoading(false);
     }
