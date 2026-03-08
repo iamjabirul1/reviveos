@@ -298,7 +298,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Results / Social Proof */}
+        {/* What ReviveOS Can Do */}
         <section id="results" className="py-20 border-t bg-muted/30">
           <div className="container mx-auto px-4 max-w-5xl">
             <motion.div
@@ -309,14 +309,14 @@ export default function Landing() {
               className="text-center mb-16"
             >
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
-                Real results from real teams
+                Built for pipeline recovery
               </motion.h2>
               <motion.p variants={fadeUp} className="text-muted-foreground text-lg">
-                Here's what happens when you stop ignoring your dead pipeline
+                Everything you need to turn stale leads into booked meetings
               </motion.p>
             </motion.div>
 
-            {/* Metrics */}
+            {/* Capabilities */}
             <motion.div
               className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
               initial="hidden"
@@ -325,20 +325,20 @@ export default function Landing() {
               variants={stagger}
             >
               {[
-                { value: '$47K', label: 'Average pipeline recovered in 30 days', icon: DollarSign },
-                { value: '23%', label: 'Of "dead" leads re-engaged successfully', icon: TrendingUp },
-                { value: '4.2x', label: 'ROI within the first quarter', icon: BarChart3 },
+                { value: 'AI Scoring', label: 'Instantly rank every lead by revival potential', icon: TrendingUp },
+                { value: 'Personalized', label: 'Hyper-personalized win-back messages at scale', icon: MessageSquare },
+                { value: 'Multi-Channel', label: 'Email and SMS outreach with tracking', icon: Mail },
                 { value: '< 15 min', label: 'Time to launch your first campaign', icon: Clock },
               ].map((s, i) => (
                 <motion.div key={i} variants={scaleIn} className="text-center p-6 bg-card rounded-xl border">
                   <s.icon className="h-6 w-6 text-primary mx-auto mb-3" />
-                  <p className="text-3xl md:text-4xl font-extrabold text-foreground">{s.value}</p>
+                  <p className="text-2xl md:text-3xl font-extrabold text-foreground">{s.value}</p>
                   <p className="text-xs text-muted-foreground mt-2 leading-snug">{s.label}</p>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* Testimonials */}
+            {/* Use cases instead of fake testimonials */}
             <motion.div
               className="grid md:grid-cols-3 gap-6"
               initial="hidden"
@@ -348,38 +348,29 @@ export default function Landing() {
             >
               {[
                 {
-                  quote: "We recovered $62,000 in pipeline within the first 3 weeks. These were leads we had completely written off. ReviveOS found the signal in the noise.",
-                  name: "Sarah Chen",
-                  role: "VP of Sales, ScaleUp AI",
-                  stars: 5,
+                  title: "Lost Deal Revival",
+                  description: "Re-engage closed-lost opportunities with personalized messaging based on the original deal context and timing signals.",
+                  icon: Target,
                 },
                 {
-                  quote: "The approval queue is genius. Our team reviews every message before it goes out, so we never worry about AI going rogue. It's like having a tireless SDR that respects your brand.",
-                  name: "Marcus Rivera",
-                  role: "Head of Growth, CloseMate",
-                  stars: 5,
+                  title: "No-Show Recovery",
+                  description: "Automatically follow up with prospects who ghosted demos, using AI-crafted messages that acknowledge the gap without being pushy.",
+                  icon: CalendarCheck,
                 },
                 {
-                  quote: "I imported 4,000 stale leads on a Monday. By Friday, we had 14 meetings booked from leads that were dead for 6+ months. The ROI is insane.",
-                  name: "Jessica Thornton",
-                  role: "Founder, Apex Consulting",
-                  stars: 5,
+                  title: "Stale Pipeline Cleanup",
+                  description: "Import thousands of dormant leads, let AI score and segment them, then launch targeted campaigns — all with human approval.",
+                  icon: Sparkles,
                 },
-              ].map((t, i) => (
+              ].map((uc, i) => (
                 <motion.div key={i} variants={fadeUp}>
                   <Card className="h-full">
                     <CardContent className="pt-6 pb-5 px-6">
-                      <div className="flex gap-0.5 mb-4">
-                        {Array.from({ length: t.stars }).map((_, j) => (
-                          <Star key={j} className="h-4 w-4 fill-warning text-warning" />
-                        ))}
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                        <uc.icon className="h-5 w-5 text-primary" />
                       </div>
-                      <Quote className="h-5 w-5 text-primary/30 mb-2" />
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-4">{t.quote}</p>
-                      <div className="border-t pt-4">
-                        <p className="text-sm font-semibold">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.role}</p>
-                      </div>
+                      <h3 className="text-base font-semibold mb-2">{uc.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{uc.description}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
