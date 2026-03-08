@@ -510,7 +510,7 @@ export default function Landing() {
                 {
                   name: 'Scale',
                   desc: 'For high-volume sales orgs',
-                  price: { monthl99, annual: 7 159 },
+                  price: { monthly: 99, annual: 79 },
                   cta: 'Contact Sales',
                   popular: false,
                   features: [
