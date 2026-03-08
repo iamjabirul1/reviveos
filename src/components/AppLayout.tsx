@@ -2,11 +2,16 @@ import { Outlet } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, AlertTriangle } from 'lucide-react';
 
 export default function AppLayout() {
   const { signOut, user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+
+  const isSuspended = (currentWorkspace as any)?.ai_suspended === true;
+  const suspendedReason = (currentWorkspace as any)?.ai_suspended_reason;
 
   return (
     <SidebarProvider>
@@ -24,6 +29,24 @@ export default function AppLayout() {
               </Button>
             </div>
           </header>
+
+          {isSuspended && (
+            <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-destructive">AI Access Suspended</p>
+                <p className="text-sm text-destructive/80 mt-0.5">
+                  {suspendedReason || 'Your AI features have been temporarily suspended.'}
+                  {' '}Please contact{' '}
+                  <a href="mailto:support@leadgenie.app" className="underline font-medium text-destructive hover:text-destructive/70">
+                    support@leadgenie.app
+                  </a>
+                  {' '}for assistance.
+                </p>
+              </div>
+            </div>
+          )}
+
           <main className="flex-1 overflow-auto p-4 md:p-6">
             <Outlet />
           </main>
