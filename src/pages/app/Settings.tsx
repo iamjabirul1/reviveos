@@ -485,10 +485,12 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-4">
+          <IntegrationSettings />
+
           <Card>
             <CardHeader>
               <CardTitle>CRM Webhook</CardTitle>
-              <CardDescription>Send events from HubSpot, GoHighLevel, or Calendly to sync leads automatically</CardDescription>
+              <CardDescription>Send events from HubSpot, GoHighLevel, Shopify, or Calendly to sync leads automatically</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -504,12 +506,14 @@ export default function SettingsPage() {
                     toast({ title: 'Copied to clipboard' });
                   }}>Copy</Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Change <code>?source=hubspot</code> to <code>?source=gohighlevel</code> or <code>?source=calendly</code> as needed.</p>
+                <p className="text-xs text-muted-foreground">
+                  Change <code>?source=hubspot</code> to <code>?source=gohighlevel</code>, <code>?source=shopify</code>, or <code>?source=calendly</code> as needed.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Supported Events</Label>
                 <div className="flex flex-wrap gap-2">
-                  {['contact_updated', 'deal_updated', 'booking_created', 'reply_received'].map(evt => (
+                  {['contact_updated', 'deal_updated', 'booking_created', 'reply_received', 'shopify_order', 'shopify_customer'].map(evt => (
                     <Badge key={evt} variant="outline" className="font-mono text-xs">{evt}</Badge>
                   ))}
                 </div>
@@ -528,26 +532,6 @@ export default function SettingsPage() {
 }, null, 2)}
                 </pre>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Native Integrations</CardTitle>
-              <CardDescription>Direct API connections (coming soon)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {['Resend (Email)', 'Twilio (SMS)', 'HubSpot API', 'GoHighLevel API', 'Calendly'].map(name => (
-                <div key={name} className="flex items-center justify-between py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{name}</p>
-                    <p className="text-sm text-muted-foreground">{name.includes('Resend') ? 'Connected' : 'Not connected'}</p>
-                  </div>
-                  <Button variant="outline" size="sm" disabled={!name.includes('Resend')}>
-                    {name.includes('Resend') ? 'Connected ✓' : 'Connect'}
-                  </Button>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </TabsContent>
