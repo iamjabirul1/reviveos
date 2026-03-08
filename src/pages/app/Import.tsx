@@ -41,6 +41,7 @@ export default function ImportPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { limits, upgradePlan, canAddLeads } = usePlanLimits();
   const [step, setStep] = useState<Step>('upload');
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvData, setCsvData] = useState<Record<string, string>[]>([]);
@@ -50,6 +51,15 @@ export default function ImportPage() {
   const [aiReasoning, setAiReasoning] = useState<string>('');
   const [aiConfidence, setAiConfidence] = useState<number | null>(null);
   const [notesColumns, setNotesColumns] = useState<string[]>([]);
+  const [currentLeadCount, setCurrentLeadCount] = useState(0);
+
+  useEffect(() => {
+    if (currentWorkspace) {
+      supabase.from('leads').select('*', { count: 'exact', head: true })
+        .eq('workspace_id', currentWorkspace.id)
+        .then(({ count }) => setCurrentLeadCount(count ?? 0));
+    }
+  }, [currentWorkspace]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
