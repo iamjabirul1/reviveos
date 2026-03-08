@@ -120,6 +120,23 @@ export default function CampaignsPage() {
     fetchCampaigns();
   }
 
+  async function sendCampaign(campaignId: string) {
+    if (!currentWorkspace) return;
+    toast({ title: 'Sending...', description: 'Delivering approved messages via email' });
+    const { data, error } = await supabase.functions.invoke('send-messages', {
+      body: { campaign_id: campaignId, workspace_id: currentWorkspace.id },
+    });
+    if (error) {
+      toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({
+        title: 'Campaign sent',
+        description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed`,
+      });
+      fetchCampaigns();
+    }
+  }
+
   const statusIcon = (s: string) => {
     switch (s) {
       case 'active': return <Play className="h-3 w-3" />;
