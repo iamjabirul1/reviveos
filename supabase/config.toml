@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.test-integration]
 verify_jwt = false
+
+[functions.crm-outbound-sync]
+verify_jwt = false

@@ -52,10 +52,10 @@ Deno.serve(async (req) => {
       integrationMap[i.provider] = i.credentials as Record<string, string>;
     }
 
-    // Resolve credentials: workspace-level first, then fall back to global env vars
-    const emailCreds = resolveEmailCreds(integrationMap);
-    const smsCreds = resolveSmsCreds(integrationMap);
-    const whatsappCreds = resolveWhatsAppCreds(integrationMap);
+    // Resolve credentials: workspace-level first, global env only for founder
+    const emailCreds = resolveEmailCreds(integrationMap, workspace_id);
+    const smsCreds = resolveSmsCreds(integrationMap, workspace_id);
+    const whatsappCreds = resolveWhatsAppCreds(integrationMap, workspace_id);
 
     // Fetch ALL approved unsent messages
     const { data: messages, error: fetchError } = await supabase
