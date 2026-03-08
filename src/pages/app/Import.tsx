@@ -145,6 +145,17 @@ export default function ImportPage() {
     }
 
     setImportStats({ imported, duplicates, errors });
+
+    // Log activity
+    if (currentWorkspace && user) {
+      await supabase.from('activity_logs').insert({
+        workspace_id: currentWorkspace.id,
+        user_id: user.id,
+        event_type: 'leads_imported',
+        payload_json: { imported, duplicates, errors, total_rows: rows.length },
+      });
+    }
+
     setStep('done');
   }
 

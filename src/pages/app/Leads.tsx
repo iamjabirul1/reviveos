@@ -32,6 +32,7 @@ const BUCKET_LABELS: Record<string, string> = {
 
 export default function LeadsPage() {
   const { currentWorkspace } = useWorkspace();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
