@@ -97,8 +97,8 @@ export default function Onboarding() {
       toast({ title: 'Error saving', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: '🎉 Onboarding complete!', description: 'AI will now use your business context for personalization' });
-      refetch();
-      navigate('/app');
+      await refetch();
+      navigate('/app', { replace: true });
     }
   }
 
