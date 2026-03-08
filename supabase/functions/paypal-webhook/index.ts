@@ -91,6 +91,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // If subscription cancelled/suspended/expired, downgrade workspace to free
+    if (["cancelled", "suspended", "expired"].includes(status)) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("workspace_id")
+        .eq("paypal_subscription_id", subscriptionId)
+        .single();
+
+      if (sub) {
+        await supabase
+          .from("workspaces")
+          .update({ plan: "free" })
+          .eq("id", sub.workspace_id);
+      }
+    }
+
     return new Response(JSON.stringify({ received: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -1,25 +1,45 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`;
 
@@ -58,7 +78,6 @@ serve(async (req) => {
         continue;
       }
 
-      // Build HTML body with tracking pixel and click-tracked links
       const openPixelUrl = `${trackingBaseUrl}?mid=${msg.id}&action=open`;
       const htmlBody = convertToTrackedHtml(msg.body, msg.id, trackingBaseUrl, openPixelUrl);
 
@@ -113,6 +132,7 @@ serve(async (req) => {
     await supabase.from("activity_logs").insert({
       workspace_id,
       event_type: "campaign_sent",
+      user_id: claimsData.claims.sub,
       payload_json: { campaign_id, sent: sentCount, failed: failCount, errors: errors.slice(0, 10) },
     });
 
@@ -135,20 +155,17 @@ function convertToTrackedHtml(
   trackingBaseUrl: string,
   openPixelUrl: string
 ): string {
-  // Convert plain text to HTML paragraphs
   let html = body
     .split("\n\n")
     .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
     .join("");
 
-  // Wrap any URLs in click-tracked links
   const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
   html = html.replace(urlRegex, (url) => {
     const trackedUrl = `${trackingBaseUrl}?mid=${messageId}&action=click&url=${encodeURIComponent(url)}`;
     return `<a href="${trackedUrl}" style="color: #2563eb;">${url}</a>`;
   });
 
-  // Append open tracking pixel
   html += `<img src="${openPixelUrl}" width="1" height="1" alt="" style="display:none;" />`;
 
   return `<!DOCTYPE html><html><body style="font-family: Arial, sans-serif; color: #1a1a1a; line-height: 1.6;">${html}</body></html>`;

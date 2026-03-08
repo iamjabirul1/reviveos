@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,12 +24,34 @@ const LEAD_FIELDS = [
   { key: "jurisdiction", label: "Jurisdiction", description: "Geographic jurisdiction for compliance" },
 ];
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
@@ -44,7 +66,7 @@ serve(async (req) => {
     const fieldsDescription = LEAD_FIELDS.map(f => `- "${f.key}": ${f.description}`).join("\n");
 
     const sampleDataStr = (sample_rows || []).slice(0, 3).map((row: Record<string, string>, i: number) => {
-      return `Row ${i + 1}: ${headers.map(h => `${h}="${row[h] || ''}"`).join(", ")}`;
+      return `Row ${i + 1}: ${headers.map((h: string) => `${h}="${row[h] || ''}"`).join(", ")}`;
     }).join("\n");
 
     const prompt = `You are a data mapping expert. Given CSV column headers and sample data, map each CSV column to the most appropriate CRM lead field.
@@ -53,7 +75,7 @@ AVAILABLE CRM FIELDS:
 ${fieldsDescription}
 
 CSV COLUMNS TO MAP:
-${headers.map(h => `- "${h}"`).join("\n")}
+${headers.map((h: string) => `- "${h}"`).join("\n")}
 
 SAMPLE DATA:
 ${sampleDataStr}
@@ -62,13 +84,13 @@ IMPORTANT RULES:
 1. Look at BOTH the column header name AND the sample data values to determine the best match
 2. If a column contains email addresses (has @ symbol), map it to "email"
 3. If a column contains phone numbers (digits with dashes/parentheses/+), map it to "phone"
-4. If a column contains URLs/websites, map it to "notes" (we'll store website URLs in notes)
+4. If a column contains URLs/websites, map it to "notes"
 5. If a column contains company/organization names, map it to "company"
-6. If a column contains person names, try to split into first_name and last_name. If it's a single "Name" or "Full Name" column, map it to "first_name" (we'll handle splitting in code)
+6. If a column contains person names, try to split into first_name and last_name
 7. If a column contains monetary values or deal amounts, map it to "lead_value"
-8. If a column contains dates, determine if it's "last_contacted_at" or "last_activity_at" based on context
-9. If a column has no good match, map it to "notes" — we don't want to lose any data
-10. Each CRM field should only be mapped once (except "notes" which can accept multiple columns)
+8. If a column contains dates, determine if it's "last_contacted_at" or "last_activity_at"
+9. If a column has no good match, map it to "notes"
+10. Each CRM field should only be mapped once (except "notes")
 11. NEVER skip data — every column must map to something
 
 Respond with ONLY valid JSON in this format:
@@ -91,7 +113,7 @@ Respond with ONLY valid JSON in this format:
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: "You are a data mapping expert. Always respond with valid JSON only. Never skip columns — every piece of data is valuable." },
+          { role: "system", content: "You are a data mapping expert. Always respond with valid JSON only. Never skip columns." },
           { role: "user", content: prompt },
         ],
       }),
@@ -103,18 +125,15 @@ Respond with ONLY valid JSON in this format:
 
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Fall back to basic mapping
       return new Response(JSON.stringify({ mapping: null, error: "AI unavailable, using manual mapping" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
