@@ -8,7 +8,8 @@ import {
   Zap, ArrowRight, BarChart3, Shield, Clock, Users, CheckCircle,
   Star, TrendingUp, MessageSquare, CalendarCheck, DollarSign,
   ChevronDown, Mail, Phone, Sparkles, Lock, Target, Eye,
-  ArrowUpRight, Play, Quote, Check, X,
+  ArrowUpRight, Play, Quote, Check, X, Gift, Award, Headphones,
+  FileText, Rocket, ShieldCheck, Heart,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PayPalPricingProvider, PayPalSubscribeButton } from '@/components/PayPalPricing';
@@ -494,10 +495,10 @@ export default function Landing() {
                 <Badge variant="outline" className="mb-4">Simple Pricing</Badge>
               </motion.div>
               <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
-                One recovered deal pays for a year
+                Simple pricing for recovering revenue from old leads
               </motion.h2>
               <motion.p variants={fadeUp} className="text-muted-foreground text-lg mb-8">
-                Start free. Upgrade when you see results. Cancel anytime.
+                Choose the plan that fits your lead volume today. Start small, recover lost opportunities fast, and upgrade only when you need more channels, more campaigns, or more client accounts.
               </motion.p>
               <motion.div variants={fadeUp} className="inline-flex items-center bg-muted rounded-full p-1">
                 <button
@@ -525,22 +526,25 @@ export default function Landing() {
               {[
                 {
                   name: 'Starter',
-                  desc: 'For solo founders, coaches, and service businesses who want to revive stale leads fast.',
+                  desc: 'For solo founders and service businesses who want to revive stale leads fast.',
                   price: { monthly: 39, annual: 31 },
                   cta: 'Start Reviving',
                   popular: false,
                   features: [
                     '1,000 leads stored',
-                    '3 active campaigns',
                     'CSV upload import',
                     'AI stale-lead scoring',
-                    'Email reactivation campaigns',
+                    '1-click reactivation campaigns',
+                    'Email campaign generation',
                     '3 built-in playbooks',
                     'Basic approval inbox',
                     'Booking link insertion',
                     'Basic dashboard',
+                    'Email support',
                   ],
                   excluded: ['SMS channel', 'Custom playbooks', 'CRM sync'],
+                  bonus: 'Revival Script Pack',
+                  guarantee: 'Get your first campaign live fast or we\'ll help you personally.',
                 },
                 {
                   name: 'Growth',
@@ -563,6 +567,8 @@ export default function Landing() {
                     'Priority support',
                   ],
                   excluded: [],
+                  bonus: 'No-Show Rescue + Closed-Lost Comeback Playbooks',
+                  guarantee: 'Launch your first recovery engine in 7 days or we help set it up.',
                 },
                 {
                   name: 'Scale',
@@ -583,6 +589,8 @@ export default function Landing() {
                     'Onboarding help',
                   ],
                   excluded: [],
+                  bonus: 'Agency Reporting Kit + Multi-Client SOP',
+                  guarantee: 'We help you get your first client or workspace live fast.',
                 },
               ].map((plan, i) => (
                 <motion.div key={i} variants={fadeUp}>
@@ -617,12 +625,12 @@ export default function Landing() {
                         </div>
                       ) : (
                         <Link to="/signup">
-                          <Button className={`w-full mb-6 ${plan.popular ? '' : 'variant-outline'}`} variant={plan.popular ? 'default' : 'outline'}>
+                          <Button className={`w-full mb-6`} variant={plan.popular ? 'default' : 'outline'}>
                             {plan.cta} <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </Link>
                       )}
-                      <div className="space-y-3">
+                      <div className="space-y-3 mb-5">
                         {plan.features.map((f, j) => (
                           <div key={j} className="flex items-start gap-2 text-sm">
                             <Check className="h-4 w-4 text-success shrink-0 mt-0.5" />
@@ -635,6 +643,16 @@ export default function Landing() {
                             <span className="line-through">{f}</span>
                           </div>
                         ))}
+                      </div>
+                      <div className="border-t pt-4 mt-4 space-y-3">
+                        <div className="flex items-start gap-2 text-sm">
+                          <Gift className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                          <span><strong>Bonus:</strong> {plan.bonus}</span>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm">
+                          <ShieldCheck className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                          <span className="text-muted-foreground text-xs">{plan.guarantee}</span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -697,7 +715,238 @@ export default function Landing() {
         </section>
         )}
 
-        {/* FAQ */}
+        {/* Bonuses Stack */}
+        <section className="py-20 border-t bg-muted/30">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.div variants={fadeUp}>
+                <Badge variant="outline" className="mb-4 gap-2"><Gift className="h-3.5 w-3.5" /> Included Bonuses</Badge>
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                Every plan comes loaded with bonuses
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Scripts, templates, and playbooks that accelerate your results from day one.
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="grid md:grid-cols-3 gap-6"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              {[
+                {
+                  tier: 'Starter Bonuses',
+                  tagline: 'Get the exact scripts and setup flow we use to wake up cold leads fast.',
+                  items: [
+                    'Dead Lead Revival Script Pack',
+                    '3 High-Converting Reactivation Templates',
+                    '7-Minute Setup Checklist',
+                  ],
+                },
+                {
+                  tier: 'Growth Bonuses',
+                  tagline: 'Use the same recovery plays high-performing sales teams use to recover missed deals.',
+                  items: [
+                    'Everything in Starter bonuses',
+                    'No-Show Rescue Playbook',
+                    'Closed-Lost Comeback Playbook',
+                    'SMS Reactivation Swipe File',
+                  ],
+                },
+                {
+                  tier: 'Scale Bonuses',
+                  tagline: 'Everything you need to deliver ReviveOS as a client-facing revenue service.',
+                  items: [
+                    'Everything in Growth bonuses',
+                    'Agency Client Reporting Template',
+                    'Custom Offer Angle Builder',
+                    'Multi-Client Revival SOP',
+                  ],
+                },
+              ].map((bonus, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <Card className="h-full">
+                    <CardContent className="pt-6 pb-6 px-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Gift className="h-5 w-5 text-warning" />
+                        <h3 className="font-bold">{bonus.tier}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4 italic">"{bonus.tagline}"</p>
+                      <div className="space-y-2.5">
+                        {bonus.items.map((item, j) => (
+                          <div key={j} className="flex items-start gap-2 text-sm">
+                            <Check className="h-4 w-4 text-success shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Benefits */}
+        <section className="py-20 border-t">
+          <div className="container mx-auto px-4 max-w-5xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                Why teams choose ReviveOS
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Turn old leads into booked calls without doing manual follow-up.
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="grid md:grid-cols-2 gap-x-12 gap-y-6 max-w-3xl mx-auto"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              {[
+                'Upload your old leads and get your best revival opportunities instantly.',
+                'No CRM cleanup marathon required.',
+                'Perfect if you just need booked calls from dormant leads.',
+                'Built for businesses that want recovery on autopilot.',
+                'More channels, more campaigns, more meetings.',
+                'The best plan for turning dead leads into steady revenue.',
+                'Perfect for agencies and operators running revival for others.',
+                'More control, more accounts, more leverage.',
+              ].map((benefit, i) => (
+                <motion.div key={i} variants={fadeUp} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-success/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="h-3.5 w-3.5 text-success" />
+                  </div>
+                  <p className="text-sm leading-relaxed">{benefit}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Guarantees & Risk Reversal */}
+        <section className="py-20 border-t bg-muted/30">
+          <div className="container mx-auto px-4 max-w-4xl">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+              className="text-center mb-12"
+            >
+              <motion.div variants={fadeUp}>
+                <Badge variant="outline" className="mb-4 gap-2"><ShieldCheck className="h-3.5 w-3.5" /> Zero Risk</Badge>
+              </motion.div>
+              <motion.h2 variants={fadeUp} className="text-3xl md:text-4xl font-bold mb-4">
+                Our guarantees to you
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                We're confident ReviveOS will deliver results. Here's how we back that up.
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="grid md:grid-cols-3 gap-6 mb-12"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              {[
+                {
+                  icon: Rocket,
+                  title: '7-Day Free Trial',
+                  desc: 'Try ReviveOS free for 7 days. Import your leads, generate campaigns, and see your first revival opportunities before paying.',
+                },
+                {
+                  icon: Heart,
+                  title: '14-Day Money-Back Guarantee',
+                  desc: 'If you upload your leads, launch at least one campaign, and feel ReviveOS is not useful, email us within 14 days and we\'ll refund you.',
+                },
+                {
+                  icon: Headphones,
+                  title: 'First-Win Guarantee',
+                  desc: 'Launch your first reactivation campaign in 7 days or we\'ll help you set it up personally at no extra cost.',
+                },
+              ].map((g, i) => (
+                <motion.div key={i} variants={fadeUp}>
+                  <Card className="h-full border-success/20 bg-success/3">
+                    <CardContent className="pt-6 pb-6 px-6 text-center">
+                      <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center mx-auto mb-4">
+                        <g.icon className="h-6 w-6 text-success" />
+                      </div>
+                      <h3 className="font-bold mb-2">{g.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{g.desc}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Main Guarantee Banner */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={stagger}
+            >
+              <motion.div variants={fadeUp}>
+                <Card className="border-primary/20 bg-primary/5 overflow-hidden">
+                  <CardContent className="py-8 px-8 md:px-12">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <Award className="h-8 w-8 text-primary" />
+                      </div>
+                      <div className="text-center md:text-left">
+                        <h3 className="text-xl font-bold mb-2">The Pipeline Revival Guarantee</h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          Import your stale leads, launch a campaign, and get clear revival opportunities fast — or we'll help you build your first working playbook for free.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-primary/10 grid md:grid-cols-2 gap-4">
+                      <div className="flex items-start gap-3">
+                        <Headphones className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold">24-Hour Setup Help Guarantee</p>
+                          <p className="text-xs text-muted-foreground">If you get stuck during setup, we'll respond within 24 hours and help you get your first campaign live.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold">Recovery Launch Guarantee <Badge variant="secondary" className="ml-1 text-[10px]">Growth & Scale</Badge></p>
+                          <p className="text-xs text-muted-foreground">If you activate your account and launch your first campaign but still feel lost, we'll review your first playbook and rewrite it for you.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+
         <section id="faq" className="py-20 border-t bg-muted/30">
           <div className="container mx-auto px-4 max-w-3xl">
             <motion.div
