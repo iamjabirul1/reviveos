@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.admin-suspend-workspace]
 verify_jwt = false
+
+[functions.test-integration]
+verify_jwt = false
