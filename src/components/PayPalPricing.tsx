@@ -127,7 +127,7 @@ export function usePayPalPlans() {
   useEffect(() => {
     async function fetchPlans() {
       const { data, error } = await supabase
-        .from("paypal_plans")
+        .from("paypal_plans_public" as any)
         .select("*");
 
       if (!error && data) {
