@@ -52,10 +52,10 @@ Deno.serve(async (req) => {
       integrationMap[i.provider] = i.credentials as Record<string, string>;
     }
 
-    // Resolve credentials: workspace-level first, then fall back to global env vars
-    const emailCreds = resolveEmailCreds(integrationMap);
-    const smsCreds = resolveSmsCreds(integrationMap);
-    const whatsappCreds = resolveWhatsAppCreds(integrationMap);
+    // Resolve credentials: workspace-level first, global env only for founder
+    const emailCreds = resolveEmailCreds(integrationMap, workspace_id);
+    const smsCreds = resolveSmsCreds(integrationMap, workspace_id);
+    const whatsappCreds = resolveWhatsAppCreds(integrationMap, workspace_id);
 
     // Fetch ALL approved unsent messages
     const { data: messages, error: fetchError } = await supabase
@@ -148,6 +148,8 @@ Deno.serve(async (req) => {
 });
 
 // --- Credential resolution: workspace-level → global env fallback ---
+// Global env secrets belong to the founder's workspace only
+const FOUNDER_WORKSPACE_ID = "8fb8fcae-ef4d-4d99-b599-39d0ba47c808";
 
 interface EmailCreds {
   api_key: string;
@@ -161,37 +163,43 @@ interface SmsCreds {
   phone_number: string;
 }
 
-function resolveEmailCreds(integrations: Record<string, Record<string, string>>): EmailCreds | null {
+function resolveEmailCreds(integrations: Record<string, Record<string, string>>, workspaceId?: string): EmailCreds | null {
   const ws = integrations["resend"];
   if (ws?.api_key) {
     return { api_key: ws.api_key, from_email: ws.from_email || "noreply@reviveos.com", from_name: ws.from_name || "ReviveOS" };
   }
-  const globalKey = Deno.env.get("RESEND_API_KEY");
-  if (globalKey) {
-    return { api_key: globalKey, from_email: "noreply@reviveos.com", from_name: "ReviveOS" };
+  // Only fall back to global env for founder's workspace
+  if (workspaceId === FOUNDER_WORKSPACE_ID) {
+    const globalKey = Deno.env.get("RESEND_API_KEY");
+    if (globalKey) {
+      return { api_key: globalKey, from_email: "noreply@reviveos.com", from_name: "ReviveOS" };
+    }
   }
   return null;
 }
 
-function resolveSmsCreds(integrations: Record<string, Record<string, string>>): SmsCreds | null {
+function resolveSmsCreds(integrations: Record<string, Record<string, string>>, workspaceId?: string): SmsCreds | null {
   const ws = integrations["twilio"];
   if (ws?.account_sid && ws?.auth_token) {
     return { account_sid: ws.account_sid, auth_token: ws.auth_token, phone_number: ws.phone_number || "" };
   }
-  const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const token = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const phone = Deno.env.get("TWILIO_PHONE_NUMBER");
-  if (sid && token) return { account_sid: sid, auth_token: token, phone_number: phone || "" };
+  // Only fall back to global env for founder's workspace
+  if (workspaceId === FOUNDER_WORKSPACE_ID) {
+    const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const token = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const phone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    if (sid && token) return { account_sid: sid, auth_token: token, phone_number: phone || "" };
+  }
   return null;
 }
 
-function resolveWhatsAppCreds(integrations: Record<string, Record<string, string>>): SmsCreds | null {
+function resolveWhatsAppCreds(integrations: Record<string, Record<string, string>>, workspaceId?: string): SmsCreds | null {
   const ws = integrations["whatsapp"];
   if (ws?.account_sid && ws?.auth_token) {
     return { account_sid: ws.account_sid, auth_token: ws.auth_token, phone_number: ws.whatsapp_number || "" };
   }
   // Fall back to twilio creds with whatsapp prefix
-  return resolveSmsCreds(integrations);
+  return resolveSmsCreds(integrations, workspaceId);
 }
 
 // --- Send functions ---

@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2 } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight, Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { scoreLead } from '@/lib/scoring';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
@@ -46,6 +46,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const pageSize = 25;
 
   useEffect(() => {
@@ -452,6 +453,51 @@ export default function LeadsPage() {
                   ) : (
                     <p className="text-sm text-muted-foreground">Not yet enriched. Click "Enrich" to run AI research on this lead's company.</p>
                   )}
+                </div>
+
+                {/* CRM Outbound Sync */}
+                <div className="border-t pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                      <RefreshCw className="h-4 w-4 text-primary" /> CRM Sync
+                    </h3>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={syncing}
+                      onClick={async () => {
+                        if (!currentWorkspace || !selectedLead) return;
+                        setSyncing(true);
+                        try {
+                          const { data, error } = await supabase.functions.invoke('crm-outbound-sync', {
+                            body: { workspace_id: currentWorkspace.id, lead_id: selectedLead.id },
+                          });
+                          if (error) throw error;
+                          const results = data?.results || [];
+                          const succeeded = results.filter((r: any) => r.success).map((r: any) => r.provider);
+                          const failed = results.filter((r: any) => !r.success);
+                          if (results.length === 0) {
+                            toast({ title: 'No CRM integrations', description: 'Connect a CRM in Settings → Integrations first.' });
+                          } else if (failed.length === 0) {
+                            toast({ title: 'Synced to CRM', description: `Updated: ${succeeded.join(', ')}` });
+                          } else {
+                            toast({
+                              title: 'Partial sync',
+                              description: `OK: ${succeeded.join(', ') || 'none'}. Failed: ${failed.map((f: any) => `${f.provider}: ${f.error}`).join('; ')}`,
+                              variant: 'destructive',
+                            });
+                          }
+                        } catch (err) {
+                          toast({ title: 'Sync failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+                        } finally {
+                          setSyncing(false);
+                        }
+                      }}
+                    >
+                      {syncing ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Syncing...</> : 'Push to CRM'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Push this lead's data to connected HubSpot, GoHighLevel, or Shopify.</p>
                 </div>
 
                 <div>
