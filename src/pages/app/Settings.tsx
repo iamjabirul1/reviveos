@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Settings, Save, ShieldX, ScrollText, Building2, CreditCard,
-  Check, ArrowUpRight, AlertTriangle, Loader2,
+  Check, ArrowUpRight, AlertTriangle, Loader2, Bell,
 } from 'lucide-react';
 import BusinessContextForm from '@/components/BusinessContextForm';
 import NotificationPreferences from '@/components/NotificationPreferences';
