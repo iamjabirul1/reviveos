@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "LeadGenie <notifications@updates.leadgenie.app>",
+              from: "ReviveOS <notifications@updates.reviveos.com>",
               to: [ownerEmail],
               subject: "✅ Your AI access has been restored",
               html: `

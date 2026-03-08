@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "LeadGenie <notifications@updates.leadgenie.app>",
+          from: "ReviveOS <notifications@updates.reviveos.com>",
           to: [email],
           subject: "⚠️ Weekly Plan Limit Report",
           html,
