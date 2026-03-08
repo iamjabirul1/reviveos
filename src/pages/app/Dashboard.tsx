@@ -131,6 +131,10 @@ export default function Dashboard() {
     setRecentActivity((activityRes.data ?? []) as RecentActivity[]);
     setCampaigns((campaignsRes.data ?? []) as CampaignSummary[]);
     setLoading(false);
+    } catch (err) {
+      console.error('Dashboard fetch error:', err);
+      setLoading(false);
+    }
   }
 
   const pct = (n: number, d: number) => d === 0 ? 0 : Math.round((n / d) * 100);
