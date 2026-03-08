@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { scoreLead } from '@/lib/scoring';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
