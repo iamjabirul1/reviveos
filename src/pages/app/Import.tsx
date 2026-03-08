@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, CheckCircle, AlertCircle, FileUp, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 const LEAD_FIELDS = [
   { key: 'first_name', label: 'First Name' },
