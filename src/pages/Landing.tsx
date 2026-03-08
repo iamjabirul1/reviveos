@@ -185,18 +185,14 @@ export default function Landing() {
 
             {/* Social proof strip */}
             <motion.div variants={fadeUp} className="mt-12 flex flex-col items-center gap-3">
-              <div className="flex -space-x-2">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-1">
-                {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-warning text-warning" />)}
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs px-3 py-1 gap-1.5">
+                  <Rocket className="h-3 w-3 text-primary" />
+                  Now in Early Access
+                </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Trusted by <strong className="text-foreground">2,400+</strong> sales teams recovering pipeline daily
+                Join the sales teams already recovering dead pipeline with AI
               </p>
             </motion.div>
           </motion.div>
