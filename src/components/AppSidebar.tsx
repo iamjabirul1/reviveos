@@ -31,7 +31,19 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .then(({ data }) => setIsAdmin((data ?? []).length > 0));
+    }
+  }, [user]);
 
   return (
     <Sidebar collapsible="icon">

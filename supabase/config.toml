@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.weekly-limit-check]
 verify_jwt = false
+
+[functions.admin-ai-usage]
+verify_jwt = false
