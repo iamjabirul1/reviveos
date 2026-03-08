@@ -1,11 +1,13 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap, LogOut
+  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
