@@ -40,6 +40,8 @@ export default function LeadsPage() {
   const [bucketFilter, setBucketFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichingLead, setEnrichingLead] = useState<string | null>(null);
   const pageSize = 25;
 
   useEffect(() => {
