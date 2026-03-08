@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BookOpen, Plus, Trash2, ArrowUp, ArrowDown, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { LimitReached } from '@/components/UpgradePrompt';
 
 const PLAYBOOK_TYPES = [
   { value: 'stale_lead', label: 'Stale Lead Reactivation', emoji: '🔄' },
