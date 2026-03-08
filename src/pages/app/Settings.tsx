@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import BusinessContextForm from '@/components/BusinessContextForm';
 import NotificationPreferences from '@/components/NotificationPreferences';
+import AIUsageChart from '@/components/AIUsageChart';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
