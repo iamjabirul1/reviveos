@@ -99,8 +99,8 @@ export default function Landing() {
       <div className="min-h-screen bg-background overflow-hidden">
         {/* Announcement Bar */}
         <div className="bg-primary text-primary-foreground text-center text-sm py-2 px-4 font-medium">
-          🚀 Teams using ReviveOS recover an average of <strong>$47,000</strong> in pipeline within 30 days.{' '}
-          <Link to="/signup" className="underline font-bold">Start free →</Link>
+          🚀 ReviveOS is now in Early Access — be first to recover your dead pipeline with AI.{' '}
+          <Link to="/signup" className="underline font-bold">Get started free →</Link>
         </div>
 
         {/* Nav */}
