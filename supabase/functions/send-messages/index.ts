@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     await supabase.from("activity_logs").insert({
       workspace_id,
       event_type: "campaign_sent",
-      user_id: claimsData.claims.sub,
+      user_id: authUser.id,
       payload_json: { campaign_id, sent: sentCount, failed: failCount, errors: errors.slice(0, 10) },
     });
 
