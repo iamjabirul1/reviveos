@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.crm-webhook]
 verify_jwt = false
+
+[functions.paypal-setup]
+verify_jwt = false
+
+[functions.paypal-webhook]
+verify_jwt = false
+
+[functions.paypal-create-subscription]
+verify_jwt = false
