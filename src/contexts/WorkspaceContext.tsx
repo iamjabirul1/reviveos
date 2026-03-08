@@ -42,8 +42,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     
     const ws = (data ?? []) as Workspace[];
     setWorkspaces(ws);
-    if (!currentWorkspace && ws.length > 0) {
-      setCurrentWorkspace(ws[0]);
+    if (ws.length > 0) {
+      // Update current workspace with fresh data, or set first if none selected
+      const updated = currentWorkspace
+        ? ws.find(w => w.id === currentWorkspace.id) ?? ws[0]
+        : ws[0];
+      setCurrentWorkspace(updated);
     }
     setLoading(false);
   };
