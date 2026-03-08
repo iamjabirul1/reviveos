@@ -36,12 +36,18 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (user) {
-      supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'admin')
-        .then(({ data }) => setIsAdmin((data ?? []).length > 0));
+      // Only show admin nav for founder email
+      const isFounder = user.email === 'iamjabirul@gmail.com';
+      if (isFounder) {
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .then(({ data }) => setIsAdmin((data ?? []).length > 0));
+      } else {
+        setIsAdmin(false);
+      }
     }
   }, [user]);
 
