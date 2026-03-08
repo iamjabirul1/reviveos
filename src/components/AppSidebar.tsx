@@ -1,8 +1,9 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap
+  CheckSquare, BarChart3, Settings, Zap, LogOut
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import {
@@ -28,6 +29,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { workspaces, currentWorkspace, setCurrentWorkspace } = useWorkspace();
+  const { signOut } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
@@ -82,11 +84,14 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {!collapsed && (
-          <p className="text-xs text-muted-foreground px-2 py-1">
-            © 2026 ReviveOS
-          </p>
-        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton onClick={signOut} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+              <LogOut className="mr-2 h-4 w-4" />
+              {!collapsed && <span>Log out</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

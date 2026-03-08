@@ -17,6 +17,8 @@ export default function Signup() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const [signupComplete, setSignupComplete] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
@@ -29,10 +31,31 @@ export default function Signup() {
     if (error) {
       toast({ title: 'Signup failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Check your email', description: 'We sent you a confirmation link.' });
-      navigate('/app');
+      setSignupComplete(true);
     }
   };
+
+  if (signupComplete) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Zap className="h-6 w-6 text-primary" />
+              <span className="font-bold text-xl">ReviveOS</span>
+            </div>
+            <CardTitle>Check your email</CardTitle>
+            <CardDescription>
+              We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center">
+            <Link to="/login" className="text-sm text-primary hover:underline">Back to login</Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
