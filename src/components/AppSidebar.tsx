@@ -1,8 +1,9 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap
+  CheckSquare, BarChart3, Settings, Zap, LogOut
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { NavLink } from '@/components/NavLink';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import {
