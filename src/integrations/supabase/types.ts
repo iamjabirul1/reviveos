@@ -735,7 +735,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      paypal_plans_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          plan_name: string | null
+          price_annual: number | null
+          price_monthly: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          plan_name?: string | null
+          price_annual?: number | null
+          price_monthly?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          plan_name?: string | null
+          price_annual?: number | null
+          price_monthly?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_ai_rate_limit: {
