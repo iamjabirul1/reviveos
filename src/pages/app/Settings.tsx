@@ -460,6 +460,10 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="notifications" className="space-y-4">
+          <NotificationPreferences />
+        </TabsContent>
+
         <TabsContent value="audit" className="space-y-4">
           <Card>
             <CardHeader>
