@@ -125,26 +125,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function checkPlanLimits() {
-    if (!currentWorkspace) return;
-    const warningItems = usageItems
-      .filter((item) => {
-        if (item.max === 'unlimited') return false;
-        const pct = Math.min(100, (item.current / (item.max as number)) * 100);
-        return pct >= 80;
-      })
-      .map((item) => ({
-        label: item.label,
-        current: item.current,
-        max: item.max as number,
-        pct: Math.round(Math.min(100, (item.current / (item.max as number)) * 100)),
-      }));
-
-    if (warningItems.length > 0) {
-      await sendNotificationEmail('plan_limit_warning', { items: warningItems });
-    }
-  }
-
   async function cancelSubscription() {
     if (!subscription) return;
     setCancelling(true);
@@ -172,9 +152,6 @@ export default function SettingsPage() {
       setCancelling(false);
     }
   }
-
-  // Plan limit check removed from page load — this should be handled
-  // server-side (e.g. via a scheduled cron) to avoid sending emails on every visit.
 
   const usageItems = [
     {
