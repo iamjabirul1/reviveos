@@ -1,73 +1,154 @@
-# Welcome to your Lovable project
+# ReviveOS
 
-## Project info
+AI-powered lead revival and outreach platform. Resurrect dead leads with personalized, multi-channel campaigns.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Features
 
-## How can I edit this code?
+- **Lead Management** - Import, enrich, and score leads with AI
+- **AI Message Generation** - Personalized outreach using context-aware AI
+- **Multi-channel Outreach** - Email and SMS/WhatsApp campaigns
+- **Approval Workflow** - Review AI-generated messages before sending
+- **Playbooks** - Reusable templates for different revival strategies
+- **Analytics** - Track opens, clicks, replies, and conversions
+- **Multi-tenant** - Workspace isolation with role-based access
+- **Subscriptions** - PayPal-based billing with plan limits
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **AI**: Lovable AI (Gemini, GPT models)
+- **Email**: Resend
+- **SMS**: Twilio
+- **Payments**: PayPal
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Quick Start (Local Development)
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Clone the repository
+git clone <YOUR_REPO_URL>
+cd <REPO_NAME>
 
-**Use your preferred IDE**
+# Install dependencies
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Create environment file
+cp .env.example .env
+# Edit .env with your Supabase credentials
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open [http://localhost:8080](http://localhost:8080)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Environment Variables
 
-**Use GitHub Codespaces**
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase anon key |
+| `VITE_SUPABASE_PROJECT_ID` | Supabase project ID |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Documentation
 
-## What technologies are used for this project?
+| Document | Description |
+|----------|-------------|
+| [Self-Hosting Guide](docs/SELF_HOSTING.md) | Complete self-hosting setup |
+| [Deployment Guide](docs/DEPLOYMENT.md) | Deploy to Vercel, Netlify, Docker |
+| [Edge Functions](docs/EDGE_FUNCTIONS.md) | Backend function reference |
+| [Database Schema](docs/DATABASE.md) | Complete schema documentation |
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+├── src/
+│   ├── components/     # React components
+│   ├── pages/          # Route pages
+│   ├── contexts/       # React contexts (Auth, Workspace)
+│   ├── hooks/          # Custom hooks
+│   ├── lib/            # Utilities
+│   └── integrations/   # Supabase client & types
+├── supabase/
+│   ├── functions/      # Edge functions
+│   ├── migrations/     # Database migrations
+│   └── config.toml     # Supabase config
+├── docs/               # Documentation
+└── public/             # Static assets
+```
 
-## How can I deploy this project?
+## Scripts
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```bash
+npm run dev       # Start dev server
+npm run build     # Production build
+npm run preview   # Preview production build
+npm run test      # Run tests
+npm run lint      # Lint code
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Self-Hosting
 
-Yes, you can!
+See [Self-Hosting Guide](docs/SELF_HOSTING.md) for complete instructions.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+**TL;DR:**
+1. Create a Supabase project
+2. Push migrations: `supabase db push`
+3. Deploy functions: `supabase functions deploy`
+4. Set secrets in Supabase dashboard
+5. Deploy frontend to Vercel/Netlify
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Deployment
+
+See [Deployment Guide](docs/DEPLOYMENT.md) for platform-specific instructions.
+
+**Quick Deploy:**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=YOUR_REPO_URL)
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=YOUR_REPO_URL)
+
+## Required Secrets (Edge Functions)
+
+| Secret | Required For |
+|--------|--------------|
+| `LOVABLE_API_KEY` | AI generation |
+| `RESEND_API_KEY` | Email sending |
+| `TWILIO_ACCOUNT_SID` | SMS/WhatsApp |
+| `TWILIO_AUTH_TOKEN` | SMS/WhatsApp |
+| `TWILIO_PHONE_NUMBER` | SMS/WhatsApp |
+| `PAYPAL_CLIENT_ID` | Subscriptions |
+| `PAYPAL_SECRET_KEY` | Subscriptions |
+
+## Architecture
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Browser   │────▶│   Supabase   │────▶│  Edge Func  │
+│  (React)    │◀────│  (Postgres)  │◀────│  (Deno)     │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │             │
+               ┌────▼────┐  ┌─────▼─────┐
+               │ Resend  │  │  Twilio   │
+               │ (Email) │  │ (SMS/WA)  │
+               └─────────┘  └───────────┘
+```
+
+## Security
+
+- Row-Level Security (RLS) on all tables
+- Workspace isolation via membership checks
+- JWT validation in edge functions
+- Credentials encrypted in database
+- Admin roles in separate table (not profiles)
+
+## License
+
+MIT
+
+## Support
+
+- [Documentation](docs/)
+- [GitHub Issues](../../issues)
