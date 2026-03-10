@@ -19,6 +19,7 @@ import PlaybooksPage from "./pages/app/PlaybooksPage";
 import CampaignsPage from "./pages/app/Campaigns";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
+import RevenuePage from "./pages/app/RevenuePage";
 import SettingsPage from "./pages/app/Settings";
 import AdminDashboard from "./pages/app/AdminDashboard";
 import TermsOfService from "./pages/TermsOfService";
