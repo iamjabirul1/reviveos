@@ -54,6 +54,7 @@ const App = () => (
                   <Route path="campaigns" element={<ErrorBoundary><CampaignsPage /></ErrorBoundary>} />
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
+                  <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
                   <Route path="settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
                   <Route path="admin" element={<ProtectedRoute requireAdmin><ErrorBoundary><AdminDashboard /></ErrorBoundary></ProtectedRoute>} />
                 </Route>

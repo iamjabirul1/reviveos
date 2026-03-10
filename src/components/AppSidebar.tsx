@@ -23,6 +23,7 @@ const navItems = [
   { title: 'Campaigns', url: '/app/campaigns', icon: Megaphone },
   { title: 'Approvals', url: '/app/approvals', icon: CheckSquare },
   { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
+  { title: 'Revenue', url: '/app/revenue', icon: DollarSign },
   { title: 'Settings', url: '/app/settings', icon: Settings },
 ];
 
