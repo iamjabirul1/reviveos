@@ -206,6 +206,90 @@ export type Database = {
           },
         ]
       }
+      deal_outcomes: {
+        Row: {
+          campaign_id: string | null
+          closed_at: string | null
+          created_at: string
+          currency: string
+          id: string
+          lead_id: string
+          message_id: string | null
+          notes: string | null
+          outcome: string
+          playbook_id: string | null
+          revenue_amount: number | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          lead_id: string
+          message_id?: string | null
+          notes?: string | null
+          outcome?: string
+          playbook_id?: string | null
+          revenue_amount?: number | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          closed_at?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          lead_id?: string
+          message_id?: string | null
+          notes?: string | null
+          outcome?: string
+          playbook_id?: string | null
+          revenue_amount?: number | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_outcomes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_outcomes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_outcomes_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_outcomes_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_outcomes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           best_angle: string | null
