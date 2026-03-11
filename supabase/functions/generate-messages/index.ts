@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -33,19 +32,18 @@ Deno.serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { leads, playbook_type, tone, cta, workspace_id } = await req.json();
+    const { leads, playbook_type, tone, cta, workspace_id, enable_ab_testing } = await req.json();
 
     if (!leads || !Array.isArray(leads) || leads.length === 0) {
       throw new Error("No leads provided");
     }
 
+    const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
     // Rate limit check
     if (workspace_id) {
-      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data: rateLimit } = await sb.rpc("check_ai_rate_limit", {
         _workspace_id: workspace_id,
         _function_name: "generate-messages",
@@ -60,10 +58,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch workspace business context using service role
+    // Fetch workspace business context
     let businessContextPrompt = "";
     if (workspace_id) {
-      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       const { data: ws } = await sb.from("workspaces").select("business_context").eq("id", workspace_id).single();
       if (ws?.business_context) {
         const bc = ws.business_context as any;
@@ -83,7 +80,54 @@ SENDER'S BUSINESS CONTEXT (write FROM this company's perspective):
       }
     }
 
+    // === AI LEARNING LOOP: Fetch workspace performance insights ===
+    let learningContext = "";
+    if (workspace_id) {
+      const { data: insights } = await sb
+        .from("workspace_ai_insights")
+        .select("*")
+        .eq("workspace_id", workspace_id)
+        .gt("total_count", 2)
+        .order("win_rate", { ascending: false })
+        .limit(20);
+
+      if (insights && insights.length > 0) {
+        const toneInsights = insights.filter((i: any) => i.insight_type === "tone");
+        const ctaInsights = insights.filter((i: any) => i.insight_type === "cta");
+        const angleInsights = insights.filter((i: any) => i.insight_type === "angle");
+        const subjectInsights = insights.filter((i: any) => i.insight_type === "subject_pattern");
+
+        learningContext = `
+HISTORICAL PERFORMANCE DATA (use this to guide your writing — these are PROVEN patterns for this specific business):
+${toneInsights.length > 0 ? `Best performing tones: ${toneInsights.map((i: any) => `${i.insight_key} (${Math.round(i.win_rate * 100)}% win rate, ${i.total_count} msgs)`).join(", ")}` : ""}
+${ctaInsights.length > 0 ? `Best performing CTAs: ${ctaInsights.map((i: any) => `${i.insight_key} (${Math.round(i.win_rate * 100)}% win rate)`).join(", ")}` : ""}
+${angleInsights.length > 0 ? `Best performing angles: ${angleInsights.map((i: any) => `${i.insight_key} (${Math.round(i.win_rate * 100)}% win rate)`).join(", ")}` : ""}
+${subjectInsights.length > 0 ? `High-performing subject patterns: ${subjectInsights.map((i: any) => `"${i.insight_key}" (${Math.round(i.win_rate * 100)}% open/reply rate)`).join(", ")}` : ""}
+
+IMPORTANT: Lean toward proven winning patterns above. If the requested tone differs from top-performing tones, still follow the request but incorporate elements from winning approaches.`;
+      }
+    }
+
+    // === Calculate AI confidence score based on historical data ===
+    let confidenceBase = 50; // default
+    if (workspace_id) {
+      const { data: outcomeStats } = await sb
+        .from("message_outcomes")
+        .select("outcome")
+        .eq("workspace_id", workspace_id);
+      
+      if (outcomeStats && outcomeStats.length > 0) {
+        const total = outcomeStats.length;
+        const wins = outcomeStats.filter((o: any) => o.replied || o.booked || o.deal_won).length;
+        const historicalWinRate = wins / total;
+        // More data = higher confidence; higher win rate = higher confidence
+        const dataBonus = Math.min(20, total / 5); // up to +20 for 100+ messages
+        confidenceBase = Math.min(95, Math.round(50 + historicalWinRate * 30 + dataBonus));
+      }
+    }
+
     const results = [];
+    const variantsToGenerate = enable_ab_testing ? ["A", "B"] : ["A"];
 
     for (const lead of leads) {
       const enrichment = lead.enrichment_json;
@@ -100,8 +144,14 @@ DEEP RESEARCH DATA (use this heavily for personalization):
 - Best Outreach Angle: ${enrichment.best_outreach_angle || 'N/A'}
 - Timing Signal: ${enrichment.timing_signal || 'N/A'}` : '';
 
-      const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
+      for (const variant of variantsToGenerate) {
+        const variantInstruction = variant === "B" 
+          ? "\n\nIMPORTANT: This is VARIANT B — use a COMPLETELY DIFFERENT approach from the standard. Try a different tone, angle, subject line style, and CTA phrasing. Be creative and unconventional."
+          : "";
+
+        const systemPrompt = `You are an elite B2B sales strategist who combines deep business research with persuasive copywriting. Your specialty is crafting hyper-personalized win-back messages that feel like they were written by someone who truly understands the prospect's business.
 ${businessContextPrompt}
+${learningContext}
 
 RESEARCH PHASE (internal — do NOT include in output):
 Before writing, deeply analyze everything you know about:
@@ -122,6 +172,7 @@ WRITING RULES:
 - If they no-showed, acknowledge it gracefully without guilt-tripping
 - If closed-lost, reference what may have changed since then
 - The message should feel like it was written by a human who spent 10 minutes researching them
+${variantInstruction}
 
 PERSONALIZATION ANGLES TO CONSIDER:
 - Industry trends that affect "${lead.company || 'their business'}"
@@ -130,7 +181,7 @@ PERSONALIZATION ANGLES TO CONSIDER:
 - Their lead value ($${lead.lead_value || 'Unknown'}) signals the deal size/complexity
 - Revival score: ${lead.revival_score || 'N/A'}, Best angle: ${lead.best_angle || 'General'}`;
 
-      const userPrompt = `Generate a hyper-personalized win-back message for this lead:
+        const userPrompt = `Generate a hyper-personalized win-back message for this lead:
 
 Playbook: ${formatPlaybookType(playbook_type || 'stale_lead')}
 Name: ${lead.first_name || ''} ${lead.last_name || ''}
@@ -149,73 +200,80 @@ Respond with ONLY valid JSON:
   "email_subject": "Short, curiosity-driven subject line (no generic 'follow up')",
   "email_body": "Hyper-personalized email referencing their industry/company context",
   "sms_body": "Concise SMS under 155 chars with personal touch",
-  "rationale": "2-3 sentences explaining: what research angle you used, why this approach fits this specific lead, and what makes this message different from a generic template"
+  "rationale": "2-3 sentences explaining: what research angle you used, why this approach fits this specific lead, and what makes this message different from a generic template",
+  "tone_used": "the actual tone you used",
+  "angle_used": "brief label for the angle/approach used"
 }`;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      });
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash-preview",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          }),
+        });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`AI gateway error [${response.status}]:`, errorText);
-
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`AI gateway error [${response.status}]:`, errorText);
+          if (response.status === 429) {
+            return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+              status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          if (response.status === 402) {
+            return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
+              status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          results.push({ lead_id: lead.id, variant_label: variant, ai_confidence_score: confidenceBase, ...generateFallback(lead) });
+          continue;
         }
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "AI credits exhausted. Please check your usage." }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || "";
+
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            // Adjust confidence: variant B gets slight penalty, having learning data boosts it
+            const variantPenalty = variant === "B" ? -5 : 0;
+            const confidence = Math.min(95, Math.max(10, confidenceBase + variantPenalty));
+
+            results.push({
+              lead_id: lead.id,
+              email_subject: parsed.email_subject || "Quick follow-up",
+              email_body: parsed.email_body || "",
+              sms_body: parsed.sms_body || "",
+              rationale: parsed.rationale || "AI-generated message",
+              tone_used: parsed.tone_used || tone || "friendly",
+              angle_used: parsed.angle_used || "general",
+              variant_label: variant,
+              ai_confidence_score: confidence,
+            });
+          } else {
+            results.push({ lead_id: lead.id, variant_label: variant, ai_confidence_score: confidenceBase, ...generateFallback(lead) });
+          }
+        } catch {
+          results.push({ lead_id: lead.id, variant_label: variant, ai_confidence_score: confidenceBase, ...generateFallback(lead) });
         }
-
-        results.push({ lead_id: lead.id, ...generateFallback(lead) });
-        continue;
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || "";
-
-      try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          results.push({
-            lead_id: lead.id,
-            email_subject: parsed.email_subject || "Quick follow-up",
-            email_body: parsed.email_body || "",
-            sms_body: parsed.sms_body || "",
-            rationale: parsed.rationale || "AI-generated message",
-          });
-        } else {
-          results.push({ lead_id: lead.id, ...generateFallback(lead) });
-        }
-      } catch {
-        results.push({ lead_id: lead.id, ...generateFallback(lead) });
       }
     }
 
     // Log AI usage
     if (workspace_id) {
-      const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      const userId = authUser.id;
       await sb.from("ai_usage_log").insert(
-        results.map((r: any) => ({
+        results.map(() => ({
           workspace_id,
-          user_id: userId,
+          user_id: authUser.id,
           function_name: "generate-messages",
         }))
       );
@@ -261,5 +319,7 @@ function generateFallback(lead: any) {
     email_body: `Hi ${name},\n\nI noticed we connected a while back but didn't get the chance to continue our conversation. I wanted to reach out because I think there might still be a great fit here.\n\nWould you be open to a quick 15-minute call this week?\n\nBest regards`,
     sms_body: `Hi ${name}, just following up on our previous conversation. Would love to reconnect briefly. Are you free for a quick call?`,
     rationale: "Fallback template used — AI generation was unavailable for this lead.",
+    tone_used: "friendly",
+    angle_used: "general",
   };
 }

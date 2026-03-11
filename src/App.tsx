@@ -20,6 +20,7 @@ import CampaignsPage from "./pages/app/Campaigns";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
 import RevenuePage from "./pages/app/RevenuePage";
+import AIInsightsPage from "./pages/app/AIInsightsPage";
 import SettingsPage from "./pages/app/Settings";
 import AdminDashboard from "./pages/app/AdminDashboard";
 import TermsOfService from "./pages/TermsOfService";
@@ -55,6 +56,7 @@ const App = () => (
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
+                  <Route path="ai-insights" element={<ErrorBoundary><AIInsightsPage /></ErrorBoundary>} />
                   <Route path="settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
                   <Route path="admin" element={<ProtectedRoute requireAdmin><ErrorBoundary><AdminDashboard /></ErrorBoundary></ProtectedRoute>} />
                 </Route>

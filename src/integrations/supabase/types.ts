@@ -394,8 +394,111 @@ export type Database = {
           },
         ]
       }
+      message_outcomes: {
+        Row: {
+          angle_used: string | null
+          booked: boolean | null
+          campaign_id: string | null
+          channel: string | null
+          created_at: string
+          cta_used: string | null
+          deal_won: boolean | null
+          id: string
+          lead_id: string
+          message_id: string
+          outcome: string
+          playbook_id: string | null
+          replied: boolean | null
+          revenue_amount: number | null
+          subject_used: string | null
+          tone_used: string | null
+          updated_at: string
+          variant_label: string | null
+          workspace_id: string
+        }
+        Insert: {
+          angle_used?: string | null
+          booked?: boolean | null
+          campaign_id?: string | null
+          channel?: string | null
+          created_at?: string
+          cta_used?: string | null
+          deal_won?: boolean | null
+          id?: string
+          lead_id: string
+          message_id: string
+          outcome?: string
+          playbook_id?: string | null
+          replied?: boolean | null
+          revenue_amount?: number | null
+          subject_used?: string | null
+          tone_used?: string | null
+          updated_at?: string
+          variant_label?: string | null
+          workspace_id: string
+        }
+        Update: {
+          angle_used?: string | null
+          booked?: boolean | null
+          campaign_id?: string | null
+          channel?: string | null
+          created_at?: string
+          cta_used?: string | null
+          deal_won?: boolean | null
+          id?: string
+          lead_id?: string
+          message_id?: string
+          outcome?: string
+          playbook_id?: string | null
+          replied?: boolean | null
+          revenue_amount?: number | null
+          subject_used?: string | null
+          tone_used?: string | null
+          updated_at?: string
+          variant_label?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_outcomes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outcomes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outcomes_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outcomes_playbook_id_fkey"
+            columns: ["playbook_id"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_outcomes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
+          ai_confidence_score: number | null
           ai_rationale: string | null
           approval_status: Database["public"]["Enums"]["approval_status"]
           approved_by: string | null
@@ -411,9 +514,11 @@ export type Database = {
           replied_at: string | null
           sent_at: string | null
           subject: string | null
+          variant_label: string | null
           workspace_id: string
         }
         Insert: {
+          ai_confidence_score?: number | null
           ai_rationale?: string | null
           approval_status?: Database["public"]["Enums"]["approval_status"]
           approved_by?: string | null
@@ -429,9 +534,11 @@ export type Database = {
           replied_at?: string | null
           sent_at?: string | null
           subject?: string | null
+          variant_label?: string | null
           workspace_id: string
         }
         Update: {
+          ai_confidence_score?: number | null
           ai_rationale?: string | null
           approval_status?: Database["public"]["Enums"]["approval_status"]
           approved_by?: string | null
@@ -447,6 +554,7 @@ export type Database = {
           replied_at?: string | null
           sent_at?: string | null
           subject?: string | null
+          variant_label?: string | null
           workspace_id?: string
         }
         Relationships: [
@@ -745,6 +853,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      workspace_ai_insights: {
+        Row: {
+          avg_revenue: number | null
+          id: string
+          insight_key: string
+          insight_type: string
+          last_updated_at: string
+          loss_count: number | null
+          metadata: Json | null
+          total_count: number | null
+          win_count: number | null
+          win_rate: number | null
+          workspace_id: string
+        }
+        Insert: {
+          avg_revenue?: number | null
+          id?: string
+          insight_key: string
+          insight_type: string
+          last_updated_at?: string
+          loss_count?: number | null
+          metadata?: Json | null
+          total_count?: number | null
+          win_count?: number | null
+          win_rate?: number | null
+          workspace_id: string
+        }
+        Update: {
+          avg_revenue?: number | null
+          id?: string
+          insight_key?: string
+          insight_type?: string
+          last_updated_at?: string
+          loss_count?: number | null
+          metadata?: Json | null
+          total_count?: number | null
+          win_count?: number | null
+          win_rate?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_insights_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workspace_integrations: {
         Row: {
