@@ -20,6 +20,7 @@ import CampaignsPage from "./pages/app/Campaigns";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
 import RevenuePage from "./pages/app/RevenuePage";
+import AIInsightsPage from "./pages/app/AIInsightsPage";
 import SettingsPage from "./pages/app/Settings";
 import AdminDashboard from "./pages/app/AdminDashboard";
 import TermsOfService from "./pages/TermsOfService";
