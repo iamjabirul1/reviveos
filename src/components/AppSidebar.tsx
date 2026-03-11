@@ -24,6 +24,7 @@ const navItems = [
   { title: 'Approvals', url: '/app/approvals', icon: CheckSquare },
   { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
   { title: 'Revenue', url: '/app/revenue', icon: DollarSign },
+  { title: 'AI Insights', url: '/app/ai-insights', icon: Brain },
   { title: 'Settings', url: '/app/settings', icon: Settings },
 ];
 
