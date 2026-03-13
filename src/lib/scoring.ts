@@ -11,7 +11,7 @@ interface ScoreResult {
   suggested_cta: string;
 }
 
-export function scoreLead(lead: Partial<Lead>): ScoreResult {
+export function scoreLead(lead: Partial<Lead>, emailVerification?: { status: string }): ScoreResult {
   let score = 50; // base
   const reasons: string[] = [];
 
@@ -21,6 +21,14 @@ export function scoreLead(lead: Partial<Lead>): ScoreResult {
   }
   if (!lead.email && !lead.phone) {
     return { score: 0, bucket: 'suppress', best_angle: 'N/A', best_channel: 'N/A', risk_flag: 'Missing contact info', suggested_cta: 'N/A' };
+  }
+
+  // Deliverability firewall — invalid or spam_trap emails get immediately suppressed
+  if (emailVerification) {
+    const status = emailVerification.status.toLowerCase();
+    if (status === 'invalid' || status === 'spam_trap' || status === 'abuse' || status === 'disposable') {
+      return { score: 0, bucket: 'suppress', best_angle: 'N/A', best_channel: 'N/A', risk_flag: `Email ${status}`, suggested_cta: 'N/A' };
+    }
   }
 
   // No-show in last 30 days

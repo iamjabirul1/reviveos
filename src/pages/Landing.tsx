@@ -1091,8 +1091,8 @@ export default function Landing() {
                   a: 'Yes! We support webhook integrations with HubSpot, GoHighLevel, Calendly, and more. You can also import via CSV in under 5 minutes.',
                 },
                 {
-                  q: 'Is there a free plan?',
-                  a: 'Yes — our Starter plan is completely free and includes 500 leads, revival scoring, and human approval queue. No credit card required to start.',
+                  q: 'Is there a free trial?',
+                  a: 'Yes — every plan comes with a 7-day free trial. Import your leads, generate campaigns, and see real revival opportunities before paying. No credit card required to start.',
                 },
                 {
                   q: 'What payment methods do you accept?',

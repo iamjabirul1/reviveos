@@ -206,9 +206,8 @@ export default function ImportPage() {
   async function runImport() {
     if (!currentWorkspace) return;
 
-    // Plan enforcement
-    const planLimits: Record<string, number> = { free: 500, pro: 5000, enterprise: 50000 };
-    const limit = planLimits[currentWorkspace.plan] ?? 500;
+    // Plan enforcement — use limits from planLimits.ts
+    const limit = limits.maxLeads;
     const { count: currentCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
