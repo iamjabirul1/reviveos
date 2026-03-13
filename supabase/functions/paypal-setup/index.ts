@@ -114,9 +114,9 @@ Deno.serve(async (req) => {
     const productId = await createProduct(accessToken);
 
     const plans = [
-      { name: "Starter", priceMonthly: 39, priceAnnual: 31 * 12 },
-      { name: "Growth", priceMonthly: 79, priceAnnual: 63 * 12 },
-      { name: "Scale", priceMonthly: 99, priceAnnual: 79 * 12 },
+      { name: "Starter", priceMonthly: 299, priceAnnual: 239 * 12 },
+      { name: "Growth", priceMonthly: 599, priceAnnual: 479 * 12 },
+      { name: "Scale", priceMonthly: 1200, priceAnnual: 960 * 12 },
     ];
 
     const serviceClient = createClient(
