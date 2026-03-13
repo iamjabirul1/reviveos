@@ -206,9 +206,8 @@ export default function ImportPage() {
   async function runImport() {
     if (!currentWorkspace) return;
 
-    // Plan enforcement
-    const planLimits: Record<string, number> = { free: 500, pro: 5000, enterprise: 50000 };
-    const limit = planLimits[currentWorkspace.plan] ?? 500;
+    // Plan enforcement — use limits from planLimits.ts
+    const limit = limits.maxLeads;
     const { count: currentCount } = await supabase
       .from('leads')
       .select('*', { count: 'exact', head: true })
@@ -296,9 +295,28 @@ export default function ImportPage() {
         return true;
       });
 
-      // Score each lead
+      // Email verification firewall — verify emails before scoring
+      const emailsToVerify = leadsToInsert
+        .map(l => (l.email as string)?.trim().toLowerCase())
+        .filter(Boolean);
+
+      let verificationResults: Record<string, { status: string }> = {};
+      if (emailsToVerify.length > 0) {
+        try {
+          const { data: verifyData } = await supabase.functions.invoke('verify-email', {
+            body: { emails: emailsToVerify },
+          });
+          verificationResults = verifyData?.results ?? {};
+        } catch (err) {
+          console.warn('Email verification unavailable, skipping:', err);
+        }
+      }
+
+      // Score each lead with email verification data
       leadsToInsert.forEach(lead => {
-        const result = scoreLead(lead as any);
+        const email = (lead.email as string)?.trim().toLowerCase();
+        const emailVerification = email ? verificationResults[email] : undefined;
+        const result = scoreLead(lead as any, emailVerification);
         lead.revival_score = result.score;
         lead.revival_bucket = result.bucket;
         lead.best_angle = result.best_angle;

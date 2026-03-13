@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckSquare, Check, X, Edit, ShieldX, ChevronLeft, ChevronRight, MessageSquare, Calendar, Trophy, ThumbsDown, Gauge } from 'lucide-react';
+import { CheckSquare, Check, X, Edit, ShieldX, ChevronLeft, ChevronRight, MessageSquare, Calendar, Trophy, ThumbsDown, Gauge, Keyboard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -38,6 +38,8 @@ export default function ApprovalsPage() {
   const [editBody, setEditBody] = useState('');
   const [editSubject, setEditSubject] = useState('');
   const [feedbackLoading, setFeedbackLoading] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const editBodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (currentWorkspace) fetchMessages();
@@ -77,38 +79,39 @@ export default function ApprovalsPage() {
 
   const current = messages[currentIndex];
 
-  async function approve() {
-    if (!current || !user) return;
+  const removeAndAdvance = useCallback(() => {
+    setMessages(prev => {
+      const next = prev.filter((_, i) => i !== currentIndex);
+      if (currentIndex >= next.length) {
+        setCurrentIndex(Math.max(0, next.length - 1));
+      }
+      return next;
+    });
+  }, [currentIndex]);
+
+  const approve = useCallback(async () => {
+    if (!current || !user || processing) return;
+    setProcessing(true);
     await supabase.from('messages').update({ approval_status: 'approved', approved_by: user.id }).eq('id', current.id);
     await logActivity('message_approved', current.id);
-    toast({ title: 'Approved' });
+    toast({ title: '✓ Approved' });
     removeAndAdvance();
-  }
+    setProcessing(false);
+  }, [current, user, processing, removeAndAdvance]);
 
-  async function reject() {
-    if (!current || !user) return;
+  const reject = useCallback(async () => {
+    if (!current || !user || processing) return;
+    setProcessing(true);
     await supabase.from('messages').update({ approval_status: 'rejected', approved_by: user.id }).eq('id', current.id);
     await logActivity('message_rejected', current.id);
-    toast({ title: 'Rejected' });
+    toast({ title: '✗ Rejected' });
     removeAndAdvance();
-  }
+    setProcessing(false);
+  }, [current, user, processing, removeAndAdvance]);
 
-  async function saveEdit() {
-    if (!current || !user) return;
-    await supabase.from('messages').update({
-      subject: editSubject,
-      body: editBody,
-      approval_status: 'approved',
-      approved_by: user.id,
-    }).eq('id', current.id);
-    await logActivity('message_edited_approved', current.id);
-    toast({ title: 'Edited & approved' });
-    setEditMode(false);
-    removeAndAdvance();
-  }
-
-  async function suppress() {
-    if (!current) return;
+  const suppress = useCallback(async () => {
+    if (!current || processing) return;
+    setProcessing(true);
     await supabase.from('leads').update({ do_not_contact: true, revival_bucket: 'suppress' as any }).eq('id', current.lead_id);
     await supabase.from('messages').update({ approval_status: 'rejected' }).eq('id', current.id);
     if (currentWorkspace) {
@@ -119,9 +122,80 @@ export default function ApprovalsPage() {
       });
     }
     await logActivity('lead_suppressed', current.id);
-    toast({ title: 'Lead suppressed', description: 'Marked as do not contact' });
+    toast({ title: '⊘ Lead suppressed', description: 'Marked as do not contact' });
     removeAndAdvance();
+    setProcessing(false);
+  }, [current, processing, currentWorkspace, removeAndAdvance]);
+
+  const enterEditMode = useCallback(() => {
+    if (!current || editMode) return;
+    setEditMode(true);
+    setEditBody(current.body);
+    setEditSubject(current.subject ?? '');
+    // Focus textarea after React re-render
+    setTimeout(() => editBodyRef.current?.focus(), 50);
+  }, [current, editMode]);
+
+  async function saveEdit() {
+    if (!current || !user) return;
+    setProcessing(true);
+    await supabase.from('messages').update({
+      subject: editSubject,
+      body: editBody,
+      approval_status: 'approved',
+      approved_by: user.id,
+    }).eq('id', current.id);
+    await logActivity('message_edited_approved', current.id);
+    toast({ title: '✓ Edited & approved' });
+    setEditMode(false);
+    removeAndAdvance();
+    setProcessing(false);
   }
+
+  // Global hotkeys for approval queue
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Don't fire hotkeys when typing in an input/textarea or in edit mode
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      if (editMode && !isTyping) {
+        // In edit mode, only Escape exits
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setEditMode(false);
+        }
+        return;
+      }
+
+      if (isTyping) return;
+      if (!current || processing) return;
+
+      switch (e.key) {
+        case 'Enter':
+          e.preventDefault();
+          approve();
+          break;
+        case 'e':
+        case 'E':
+          e.preventDefault();
+          enterEditMode();
+          break;
+        case 'Backspace':
+          e.preventDefault();
+          reject();
+          break;
+        case 's':
+        case 'S':
+          e.preventDefault();
+          suppress();
+          break;
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [current, processing, editMode, approve, reject, suppress, enterEditMode]);
 
   async function recordFeedback(messageId: string, outcomeType: string) {
     if (!currentWorkspace) return;
@@ -156,11 +230,6 @@ export default function ApprovalsPage() {
     });
   }
 
-  function removeAndAdvance() {
-    setMessages(prev => prev.filter((_, i) => i !== currentIndex));
-    if (currentIndex >= messages.length - 1) setCurrentIndex(Math.max(0, currentIndex - 1));
-  }
-
   async function batchApprove() {
     if (!user || !currentWorkspace) return;
     const ids = messages.map(m => m.id);
@@ -186,7 +255,19 @@ export default function ApprovalsPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Approval Queue</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Approval Queue</h1>
+        {messages.length > 0 && (
+          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
+            <Keyboard className="h-3.5 w-3.5" />
+            <span className="font-medium">Hotkeys:</span>
+            <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px] font-mono">Enter</kbd> Approve
+            <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px] font-mono">E</kbd> Edit
+            <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px] font-mono">⌫</kbd> Reject
+            <kbd className="px-1.5 py-0.5 bg-background border rounded text-[10px] font-mono">S</kbd> Suppress
+          </div>
+        )}
+      </div>
 
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList>
@@ -258,7 +339,7 @@ export default function ApprovalsPage() {
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Body</p>
-                            <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={6} />
+                            <Textarea ref={editBodyRef} value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={6} />
                           </div>
                         </div>
                       ) : (
@@ -271,22 +352,22 @@ export default function ApprovalsPage() {
                     <div className="flex flex-wrap gap-2">
                       {editMode ? (
                         <>
-                          <Button onClick={saveEdit}><Check className="mr-1 h-4 w-4" /> Save & Approve</Button>
-                          <Button variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
+                          <Button onClick={saveEdit} disabled={processing}><Check className="mr-1 h-4 w-4" /> Save & Approve</Button>
+                          <Button variant="outline" onClick={() => setEditMode(false)}>Cancel <kbd className="ml-2 text-[10px] opacity-50">Esc</kbd></Button>
                         </>
                       ) : (
                         <>
-                          <Button onClick={approve} className="bg-success hover:bg-success/90 text-success-foreground">
-                            <Check className="mr-1 h-4 w-4" /> Approve
+                          <Button onClick={approve} disabled={processing} className="bg-success hover:bg-success/90 text-success-foreground">
+                            <Check className="mr-1 h-4 w-4" /> Approve <kbd className="ml-2 text-[10px] opacity-50">↵</kbd>
                           </Button>
-                          <Button variant="outline" onClick={() => { setEditMode(true); setEditBody(current.body); setEditSubject(current.subject ?? ''); }}>
-                            <Edit className="mr-1 h-4 w-4" /> Edit
+                          <Button variant="outline" onClick={enterEditMode} disabled={processing}>
+                            <Edit className="mr-1 h-4 w-4" /> Edit <kbd className="ml-2 text-[10px] opacity-50">E</kbd>
                           </Button>
-                          <Button variant="outline" onClick={reject}>
-                            <X className="mr-1 h-4 w-4" /> Reject
+                          <Button variant="outline" onClick={reject} disabled={processing}>
+                            <X className="mr-1 h-4 w-4" /> Reject <kbd className="ml-2 text-[10px] opacity-50">⌫</kbd>
                           </Button>
-                          <Button variant="destructive" onClick={suppress}>
-                            <ShieldX className="mr-1 h-4 w-4" /> Suppress Lead
+                          <Button variant="destructive" onClick={suppress} disabled={processing}>
+                            <ShieldX className="mr-1 h-4 w-4" /> Suppress <kbd className="ml-2 text-[10px] opacity-50">S</kbd>
                           </Button>
                         </>
                       )}
