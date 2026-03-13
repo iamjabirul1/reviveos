@@ -295,9 +295,28 @@ export default function ImportPage() {
         return true;
       });
 
-      // Score each lead
+      // Email verification firewall — verify emails before scoring
+      const emailsToVerify = leadsToInsert
+        .map(l => (l.email as string)?.trim().toLowerCase())
+        .filter(Boolean);
+
+      let verificationResults: Record<string, { status: string }> = {};
+      if (emailsToVerify.length > 0) {
+        try {
+          const { data: verifyData } = await supabase.functions.invoke('verify-email', {
+            body: { emails: emailsToVerify },
+          });
+          verificationResults = verifyData?.results ?? {};
+        } catch (err) {
+          console.warn('Email verification unavailable, skipping:', err);
+        }
+      }
+
+      // Score each lead with email verification data
       leadsToInsert.forEach(lead => {
-        const result = scoreLead(lead as any);
+        const email = (lead.email as string)?.trim().toLowerCase();
+        const emailVerification = email ? verificationResults[email] : undefined;
+        const result = scoreLead(lead as any, emailVerification);
         lead.revival_score = result.score;
         lead.revival_bucket = result.bucket;
         lead.best_angle = result.best_angle;
