@@ -1,0 +1,8 @@
+First Name,Last Name,Email,Phone,Company,Source
+John,Doe,john@example.com,555-1234,Acme Corp,Website
+Jane,Smith,jane@mailinator.com,555-5678,Beta Inc,Referral
+Bob,Wilson,invalid-email,555-9012,Gamma LLC,LinkedIn
+Alice,Brown,alice@yopmail.com,555-3456,Delta Co,Cold
+Charlie,Davis,charlie@company.com,,Epsilon Ltd,Website
+Frank,Test,noreply@gmail.com,555-7890,Zeta Corp,Ads
+Grace,Lee,grace@guerrillamail.com,,Eta Inc,Partner
