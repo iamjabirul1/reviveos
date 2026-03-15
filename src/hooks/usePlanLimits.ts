@@ -9,7 +9,7 @@ export function usePlanLimits() {
   const isFounder = user?.email === FOUNDER_EMAIL;
   const limits = getPlanLimits(plan, user?.email ?? undefined);
   const planName = isFounder ? 'Founder' : getPlanDisplayName(plan);
-  const upgradePlan = getUpgradePlan(plan);
+  const upgradePlan = isFounder ? null : getUpgradePlan(plan);
 
   const canAddLeads = (currentCount: number) => currentCount < limits.maxLeads;
   const canAddCampaign = (currentCount: number) =>
