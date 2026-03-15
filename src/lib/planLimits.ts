@@ -92,7 +92,29 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   },
 };
 
-export function getPlanLimits(plan: string): PlanLimits {
+export const FOUNDER_LIMITS: PlanLimits = {
+  maxLeads: 999999,
+  maxWorkspaces: 999,
+  maxCampaigns: 'unlimited',
+  maxPlaybooks: 'unlimited',
+  maxAICallsPerDay: 999999,
+  channels: ['email', 'sms'],
+  customPlaybooks: true,
+  bulkApprovals: true,
+  advancedAnalytics: true,
+  crmSync: true,
+  autoFollowUps: true,
+  teamSeats: true,
+  roleBasedApprovals: true,
+  reportExports: true,
+  webhookIntegrations: true,
+  writeWithAI: true,
+};
+
+export const FOUNDER_EMAIL = 'iamjabirul@gmail.com';
+
+export function getPlanLimits(plan: string, email?: string): PlanLimits {
+  if (email === FOUNDER_EMAIL) return FOUNDER_LIMITS;
   return PLAN_LIMITS[plan.toLowerCase()] ?? PLAN_LIMITS.free;
 }
 
