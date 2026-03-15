@@ -1,11 +1,14 @@
 import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { getPlanLimits, getPlanDisplayName, getUpgradePlan, type PlanLimits } from '@/lib/planLimits';
+import { useAuth } from '@/contexts/AuthContext';
+import { getPlanLimits, getPlanDisplayName, getUpgradePlan, FOUNDER_EMAIL, type PlanLimits } from '@/lib/planLimits';
 
 export function usePlanLimits() {
   const { currentWorkspace } = useWorkspace();
+  const { user } = useAuth();
   const plan = currentWorkspace?.plan ?? 'free';
-  const limits = getPlanLimits(plan);
-  const planName = getPlanDisplayName(plan);
+  const isFounder = user?.email === FOUNDER_EMAIL;
+  const limits = getPlanLimits(plan, user?.email ?? undefined);
+  const planName = isFounder ? 'Founder' : getPlanDisplayName(plan);
   const upgradePlan = getUpgradePlan(plan);
 
   const canAddLeads = (currentCount: number) => currentCount < limits.maxLeads;
