@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import IntakeWizard, { NapkinData, ScoredLead } from '@/components/discover/IntakeWizard';
 import RevenueDashboard from '@/components/discover/RevenueDashboard';
+import AIAdvisorChat from '@/components/discover/AIAdvisorChat';
+import PaywallOverlay from '@/components/discover/PaywallOverlay';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -34,6 +36,37 @@ export default function Discover() {
     );
   }
 
+  // Compute context for AI chat
+  let totalPipeline = 0;
+  let leadCount = 0;
+  let avgDealSize = 5000;
+  let coldReason = 'timing';
+  let websiteUrl = '';
+
+  if (intakePath === 'napkin' && napkinData) {
+    totalPipeline = napkinData.deadLeadCount * napkinData.avgDealSize;
+    leadCount = napkinData.deadLeadCount;
+    avgDealSize = napkinData.avgDealSize;
+    coldReason = napkinData.coldReason;
+    websiteUrl = napkinData.websiteUrl;
+  } else if (intakePath === 'csv' && scoredLeads) {
+    leadCount = scoredLeads.length;
+    totalPipeline = scoredLeads.reduce((sum, l) => sum + (l.lead_value || 0), 0);
+    if (totalPipeline === 0) totalPipeline = leadCount * 5000;
+    avgDealSize = totalPipeline / leadCount;
+  }
+
+  const recoverableRevenue = Math.round(totalPipeline * 0.15);
+
+  const chatContext = {
+    leadCount,
+    avgDealSize,
+    coldReason,
+    websiteUrl,
+    totalPipeline,
+    recoverableRevenue,
+  };
+
   return (
     <>
       <Helmet>
@@ -59,33 +92,35 @@ export default function Discover() {
           </div>
         </header>
 
-        {/* Dashboard */}
+        {/* Main content: Dashboard + AI Chat side by side */}
         <main className="max-w-7xl mx-auto px-6 py-10">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground">Your Revenue Analysis</h1>
               <p className="text-muted-foreground mt-1">Here's what our AI found in your pipeline data.</p>
             </div>
-            <RevenueDashboard path={intakePath} napkinData={napkinData} scoredLeads={scoredLeads} />
-          </motion.div>
 
-          {/* CTA section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="mt-12 text-center p-8 rounded-2xl border-2 border-primary/20 bg-primary/5"
-          >
-            <h2 className="text-2xl font-bold text-foreground mb-2">Ready to recover this revenue?</h2>
-            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-              ReviveOS will auto-generate personalized win-back campaigns for every lead in your pipeline — powered by AI.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <Link to="/signup">
-                <Button size="lg" className="h-14 text-lg px-8">
-                  Start Recovering Revenue <Sparkles className="h-5 w-5 ml-2" />
-                </Button>
-              </Link>
+            <div className="grid lg:grid-cols-5 gap-8">
+              {/* Dashboard - 3 cols */}
+              <div className="lg:col-span-3 space-y-8">
+                <RevenueDashboard path={intakePath} napkinData={napkinData} scoredLeads={scoredLeads} />
+              </div>
+
+              {/* AI Chat - 2 cols */}
+              <div className="lg:col-span-2">
+                <div className="sticky top-24">
+                  <AIAdvisorChat context={chatContext} />
+                </div>
+              </div>
+            </div>
+
+            {/* Paywall */}
+            <div className="mt-12">
+              <PaywallOverlay
+                recoverableRevenue={recoverableRevenue}
+                avgDealSize={avgDealSize}
+                leadCount={leadCount}
+              />
             </div>
           </motion.div>
         </main>

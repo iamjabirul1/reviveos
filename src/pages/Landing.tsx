@@ -171,16 +171,16 @@ export default function Landing() {
             </motion.div>
 
             <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/signup">
+              <Link to="/discover">
                 <Button size="lg" className="text-base px-8 h-13 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
-                  Start Recovering Revenue <ArrowRight className="ml-2 h-5 w-5" />
+                  See Your Pipeline Revenue <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <a href="#how-it-works">
+              <Link to="/signup">
                 <Button size="lg" variant="outline" className="text-base px-8 h-13">
-                  <Play className="mr-2 h-4 w-4" /> See How It Works
+                  Start Free <ArrowRight className="mr-2 h-4 w-4" />
                 </Button>
-              </a>
+              </Link>
             </motion.div>
 
             {/* Social proof strip */}
