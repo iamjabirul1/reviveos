@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.verify-email]
 verify_jwt = false
+
+[functions.discover-ai-chat]
+verify_jwt = false
