@@ -24,6 +24,8 @@ AI-powered lead revival and outreach platform. Resurrect dead leads with persona
 
 ## Quick Start (Local Development)
 
+> Full step-by-step guide: **[SETUP.md](./SETUP.md)**
+
 ```bash
 # Clone the repository
 git clone <YOUR_REPO_URL>
@@ -32,11 +34,10 @@ cd <REPO_NAME>
 # Install dependencies
 npm install
 
-# Create environment file
+# Create environment file (values in .env.example are public and safe to use as-is)
 cp .env.example .env
-# Edit .env with your Supabase credentials
 
-# Start development server
+# Start development server (http://localhost:8080)
 npm run dev
 ```
 
