@@ -57,6 +57,10 @@ Deno.serve(async (req) => {
     const smsCreds = resolveSmsCreds(integrationMap, workspace_id);
     const whatsappCreds = resolveWhatsAppCreds(integrationMap, workspace_id);
 
+    const missingProviders: string[] = [];
+    if (!emailCreds) missingProviders.push("resend");
+    if (!smsCreds) missingProviders.push("twilio");
+
     // Fetch ALL approved unsent messages
     const { data: messages, error: fetchError } = await supabase
       .from("messages")
