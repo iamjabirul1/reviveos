@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { Megaphone, Plus, Play, Pause, CheckCircle, Send } from 'lucide-react';
+import { Megaphone, Plus, Play, Pause, CheckCircle, Send, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { LimitReached } from '@/components/UpgradePrompt';
