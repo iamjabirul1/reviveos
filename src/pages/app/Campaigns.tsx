@@ -40,6 +40,7 @@ export default function CampaignsPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { limits, upgradePlan, canAddCampaign, canUseChannel } = usePlanLimits();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
