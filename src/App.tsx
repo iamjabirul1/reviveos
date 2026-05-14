@@ -17,6 +17,7 @@ import ImportPage from "./pages/app/Import";
 import LeadsPage from "./pages/app/Leads";
 import PlaybooksPage from "./pages/app/PlaybooksPage";
 import CampaignsPage from "./pages/app/Campaigns";
+import CampaignDetailPage from "./pages/app/CampaignDetail";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
 import RevenuePage from "./pages/app/RevenuePage";
