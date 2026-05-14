@@ -195,16 +195,45 @@ export default function CampaignsPage() {
 
   async function sendCampaign(campaignId: string) {
     if (!currentWorkspace) return;
-    toast({ title: 'Sending...', description: 'Delivering approved messages via email' });
+
+    // Pre-flight: check approved-unsent vs pending counts
+    const [{ count: approvedUnsent }, { count: pendingCount }] = await Promise.all([
+      supabase.from('messages').select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId).eq('approval_status', 'approved').is('sent_at', null),
+      supabase.from('messages').select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId).eq('approval_status', 'pending'),
+    ]);
+
+    if (!approvedUnsent || approvedUnsent === 0) {
+      toast({
+        title: 'Nothing to send',
+        description: pendingCount && pendingCount > 0
+          ? `${pendingCount} message${pendingCount === 1 ? '' : 's'} still pending approval. Open the campaign to approve them.`
+          : 'All messages have already been sent (or none exist).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'Sending...', description: `Delivering ${approvedUnsent} approved message${approvedUnsent === 1 ? '' : 's'}` });
     const { data, error } = await supabase.functions.invoke('send-messages', {
       body: { campaign_id: campaignId, workspace_id: currentWorkspace.id },
     });
     if (error) {
       toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Campaign sent', description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed` });
-      fetchCampaigns();
+      return;
     }
+    if (data?.reason === 'no_credentials') {
+      toast({
+        title: 'Email/SMS not configured',
+        description: `Missing credentials for: ${(data.missing_providers || []).join(', ')}. Add them in Settings → Integrations.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    const failNote = data?.failed ? ` · ${data.failed} failed${data.errors?.length ? `: ${data.errors[0]}` : ''}` : '';
+    toast({ title: 'Campaign sent', description: `${data?.sent ?? 0} delivered${failNote}` });
+    fetchCampaigns();
   }
 
   const statusIcon = (s: string) => {
