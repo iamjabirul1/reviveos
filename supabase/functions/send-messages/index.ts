@@ -139,7 +139,13 @@ Deno.serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ sent: sentCount, failed: failCount, errors: errors.slice(0, 10) }),
+      JSON.stringify({
+        sent: sentCount,
+        failed: failCount,
+        errors: errors.slice(0, 10),
+        reason: sentCount === 0 && failCount > 0 && missingProviders.length ? "no_credentials" : undefined,
+        missing_providers: missingProviders,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
