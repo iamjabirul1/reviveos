@@ -373,17 +373,21 @@ export default function CampaignsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {campaigns.map(c => (
-            <Card key={c.id}>
+            <Card
+              key={c.id}
+              className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+              onClick={() => navigate(`/app/campaigns/${c.id}`)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{c.name}</CardTitle>
+                  <CardTitle className="text-base group-hover:text-primary transition-colors">{c.name}</CardTitle>
                   <Badge className={statusColor(c.status)}>{statusIcon(c.status)} {c.status}</Badge>
                 </div>
                 <CardDescription className="capitalize">{c.playbook_type?.replace('_', ' ')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">{c.lead_count ?? 0} leads targeted</p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                   {c.status === 'draft' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
                       <Play className="mr-1 h-3 w-3" /> Activate
@@ -404,6 +408,9 @@ export default function CampaignsPage() {
                       <Play className="mr-1 h-3 w-3" /> Resume
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" className="ml-auto" onClick={() => navigate(`/app/campaigns/${c.id}`)}>
+                    Details <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
