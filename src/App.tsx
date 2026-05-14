@@ -56,6 +56,8 @@ const App = () => (
                   <Route path="leads" element={<ErrorBoundary><LeadsPage /></ErrorBoundary>} />
                   <Route path="playbooks" element={<ErrorBoundary><PlaybooksPage /></ErrorBoundary>} />
                   <Route path="campaigns" element={<ErrorBoundary><CampaignsPage /></ErrorBoundary>} />
+                  <Route path="campaigns/:id" element={<ErrorBoundary><CampaignDetailPage /></ErrorBoundary>} />
+
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
