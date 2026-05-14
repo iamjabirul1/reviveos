@@ -17,6 +17,7 @@ import ImportPage from "./pages/app/Import";
 import LeadsPage from "./pages/app/Leads";
 import PlaybooksPage from "./pages/app/PlaybooksPage";
 import CampaignsPage from "./pages/app/Campaigns";
+import CampaignDetailPage from "./pages/app/CampaignDetail";
 import ApprovalsPage from "./pages/app/Approvals";
 import AnalyticsPage from "./pages/app/AnalyticsPage";
 import RevenuePage from "./pages/app/RevenuePage";
@@ -55,6 +56,8 @@ const App = () => (
                   <Route path="leads" element={<ErrorBoundary><LeadsPage /></ErrorBoundary>} />
                   <Route path="playbooks" element={<ErrorBoundary><PlaybooksPage /></ErrorBoundary>} />
                   <Route path="campaigns" element={<ErrorBoundary><CampaignsPage /></ErrorBoundary>} />
+                  <Route path="campaigns/:id" element={<ErrorBoundary><CampaignDetailPage /></ErrorBoundary>} />
+
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />

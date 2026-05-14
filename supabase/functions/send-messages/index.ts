@@ -57,6 +57,10 @@ Deno.serve(async (req) => {
     const smsCreds = resolveSmsCreds(integrationMap, workspace_id);
     const whatsappCreds = resolveWhatsAppCreds(integrationMap, workspace_id);
 
+    const missingProviders: string[] = [];
+    if (!emailCreds) missingProviders.push("resend");
+    if (!smsCreds) missingProviders.push("twilio");
+
     // Fetch ALL approved unsent messages
     const { data: messages, error: fetchError } = await supabase
       .from("messages")
@@ -135,7 +139,13 @@ Deno.serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ sent: sentCount, failed: failCount, errors: errors.slice(0, 10) }),
+      JSON.stringify({
+        sent: sentCount,
+        failed: failCount,
+        errors: errors.slice(0, 10),
+        reason: sentCount === 0 && failCount > 0 && missingProviders.length ? "no_credentials" : undefined,
+        missing_providers: missingProviders,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

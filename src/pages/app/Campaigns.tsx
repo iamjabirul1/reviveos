@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { Megaphone, Plus, Play, Pause, CheckCircle, Send } from 'lucide-react';
+import { Megaphone, Plus, Play, Pause, CheckCircle, Send, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { LimitReached } from '@/components/UpgradePrompt';
@@ -39,6 +40,7 @@ export default function CampaignsPage() {
   const { currentWorkspace } = useWorkspace();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { limits, upgradePlan, canAddCampaign, canUseChannel } = usePlanLimits();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
@@ -193,16 +195,45 @@ export default function CampaignsPage() {
 
   async function sendCampaign(campaignId: string) {
     if (!currentWorkspace) return;
-    toast({ title: 'Sending...', description: 'Delivering approved messages via email' });
+
+    // Pre-flight: check approved-unsent vs pending counts
+    const [{ count: approvedUnsent }, { count: pendingCount }] = await Promise.all([
+      supabase.from('messages').select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId).eq('approval_status', 'approved').is('sent_at', null),
+      supabase.from('messages').select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId).eq('approval_status', 'pending'),
+    ]);
+
+    if (!approvedUnsent || approvedUnsent === 0) {
+      toast({
+        title: 'Nothing to send',
+        description: pendingCount && pendingCount > 0
+          ? `${pendingCount} message${pendingCount === 1 ? '' : 's'} still pending approval. Open the campaign to approve them.`
+          : 'All messages have already been sent (or none exist).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'Sending...', description: `Delivering ${approvedUnsent} approved message${approvedUnsent === 1 ? '' : 's'}` });
     const { data, error } = await supabase.functions.invoke('send-messages', {
       body: { campaign_id: campaignId, workspace_id: currentWorkspace.id },
     });
     if (error) {
       toast({ title: 'Send failed', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Campaign sent', description: `${data?.sent ?? 0} delivered, ${data?.failed ?? 0} failed` });
-      fetchCampaigns();
+      return;
     }
+    if (data?.reason === 'no_credentials') {
+      toast({
+        title: 'Email/SMS not configured',
+        description: `Missing credentials for: ${(data.missing_providers || []).join(', ')}. Add them in Settings → Integrations.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    const failNote = data?.failed ? ` · ${data.failed} failed${data.errors?.length ? `: ${data.errors[0]}` : ''}` : '';
+    toast({ title: 'Campaign sent', description: `${data?.sent ?? 0} delivered${failNote}` });
+    fetchCampaigns();
   }
 
   const statusIcon = (s: string) => {
@@ -342,17 +373,21 @@ export default function CampaignsPage() {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {campaigns.map(c => (
-            <Card key={c.id}>
+            <Card
+              key={c.id}
+              className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+              onClick={() => navigate(`/app/campaigns/${c.id}`)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{c.name}</CardTitle>
+                  <CardTitle className="text-base group-hover:text-primary transition-colors">{c.name}</CardTitle>
                   <Badge className={statusColor(c.status)}>{statusIcon(c.status)} {c.status}</Badge>
                 </div>
                 <CardDescription className="capitalize">{c.playbook_type?.replace('_', ' ')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">{c.lead_count ?? 0} leads targeted</p>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                   {c.status === 'draft' && (
                     <Button size="sm" onClick={() => updateStatus(c.id, 'active')}>
                       <Play className="mr-1 h-3 w-3" /> Activate
@@ -373,6 +408,9 @@ export default function CampaignsPage() {
                       <Play className="mr-1 h-3 w-3" /> Resume
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" className="ml-auto" onClick={() => navigate(`/app/campaigns/${c.id}`)}>
+                    Details <ArrowRight className="ml-1 h-3 w-3" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
