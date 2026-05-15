@@ -35,9 +35,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const trackingBaseUrl = `${supabaseUrl}/functions/v1/email-tracking`;
 
-    const { campaign_id, workspace_id } = await req.json();
-    if (!campaign_id || !workspace_id) {
-      throw new Error("campaign_id and workspace_id are required");
+    const { campaign_id, workspace_id, message_ids } = await req.json();
+    if (!workspace_id) {
+      throw new Error("workspace_id is required");
+    }
+    if (!campaign_id && (!Array.isArray(message_ids) || message_ids.length === 0)) {
+      throw new Error("campaign_id or message_ids is required");
     }
 
     // Fetch workspace-specific integration credentials
@@ -61,14 +64,19 @@ Deno.serve(async (req) => {
     if (!emailCreds) missingProviders.push("resend");
     if (!smsCreds) missingProviders.push("twilio");
 
-    // Fetch ALL approved unsent messages
-    const { data: messages, error: fetchError } = await supabase
+    // Fetch approved unsent messages — either a specific set (retry) or campaign-wide
+    let q = supabase
       .from("messages")
       .select("*, leads!inner(email, phone, first_name, last_name)")
-      .eq("campaign_id", campaign_id)
       .eq("workspace_id", workspace_id)
       .eq("approval_status", "approved")
       .is("sent_at", null);
+    if (Array.isArray(message_ids) && message_ids.length > 0) {
+      q = q.in("id", message_ids);
+    } else {
+      q = q.eq("campaign_id", campaign_id);
+    }
+    const { data: messages, error: fetchError } = await q;
 
     if (fetchError) throw fetchError;
     if (!messages || messages.length === 0) {
@@ -86,38 +94,41 @@ Deno.serve(async (req) => {
       const lead = msg as any;
       const channel = msg.channel || "email";
       const leadPhone = lead.leads?.phone;
-
-      // Determine if WhatsApp
       const isWhatsApp = channel === "sms" && leadPhone?.startsWith("whatsapp:");
 
+      let result: { success: boolean; error?: string };
       if (channel === "email") {
-        const result = await sendEmail(msg, lead, emailCreds, trackingBaseUrl);
-        if (result.success) {
-          await supabase.from("messages")
-            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-            .eq("id", msg.id);
-          sentCount++;
-        } else {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
-        }
+        result = await sendEmail(msg, lead, emailCreds, trackingBaseUrl);
       } else if (channel === "sms") {
         const creds = isWhatsApp ? whatsappCreds : smsCreds;
-        const result = await sendSms(msg, lead, creds, isWhatsApp);
-        if (result.success) {
-          await supabase.from("messages")
-            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-            .eq("id", msg.id);
-          sentCount++;
-        } else {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
-        }
+        result = await sendSms(msg, lead, creds, isWhatsApp);
+      } else {
+        result = { success: false, error: `Unsupported channel: ${channel}` };
+      }
+
+      const nowIso = new Date().toISOString();
+      if (result.success) {
+        await supabase.from("messages").update({
+          sent_at: nowIso,
+          delivered_at: nowIso,
+          send_error: null,
+          last_attempt_at: nowIso,
+          send_attempts: (msg.send_attempts ?? 0) + 1,
+        }).eq("id", msg.id);
+        sentCount++;
+      } else {
+        await supabase.from("messages").update({
+          send_error: result.error ?? "Unknown error",
+          last_attempt_at: nowIso,
+          send_attempts: (msg.send_attempts ?? 0) + 1,
+        }).eq("id", msg.id);
+        failCount++;
+        errors.push(`Lead ${msg.lead_id}: ${result.error}`);
       }
     }
 
-    // Update campaign status if all messages sent
-    if (sentCount > 0) {
+    // Update campaign status if all messages sent (only when scoped to a campaign)
+    if (sentCount > 0 && campaign_id) {
       const { count: remainingCount } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
