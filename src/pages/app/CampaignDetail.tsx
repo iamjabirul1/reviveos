@@ -328,6 +328,11 @@ export default function CampaignDetailPage() {
           <Button size="sm" variant="default" onClick={sendApproved} disabled={busy}>
             <Send className="mr-1 h-3 w-3" /> Send approved
           </Button>
+          {stats.failed > 0 && (
+            <Button size="sm" variant="outline" onClick={() => retryMessages(messages.filter(m => !m.sent_at && (m.send_attempts ?? 0) > 0).map(m => m.id))} disabled={busy}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Retry failed ({stats.failed})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -338,11 +343,12 @@ export default function CampaignDetailPage() {
           <CardDescription>Live stats for this campaign</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             <FunnelStat label="Targeted" value={stats.target} />
             <FunnelStat label="Drafted" value={stats.total} max={stats.target} />
             <FunnelStat label="Approved" value={stats.approved} max={stats.target} />
             <FunnelStat label="Sent" value={stats.sent} max={stats.target} />
+            <FunnelStat label="Failed" value={stats.failed} max={Math.max(stats.approved, 1)} tone={stats.failed > 0 ? 'danger' : undefined} />
             <FunnelStat label="Opened" value={stats.opened} max={Math.max(stats.sent, 1)} />
             <FunnelStat label="Replied" value={stats.replied} max={Math.max(stats.sent, 1)} />
             <FunnelStat label="Booked" value={bookingsCount} max={Math.max(stats.sent, 1)} />
