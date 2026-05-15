@@ -23,7 +23,8 @@ interface MessageWithLead {
   ai_confidence_score?: number | null;
   sent_at?: string | null;
   replied_at?: string | null;
-  lead?: { first_name: string | null; last_name: string | null; email: string | null; company: string | null; revival_score: number | null };
+  lead?: any;
+  campaign?: { id: string; name: string; playbook_type: string | null } | null;
 }
 
 export default function ApprovalsPage() {
@@ -51,13 +52,13 @@ export default function ApprovalsPage() {
       const [pendingRes, sentRes] = await Promise.all([
         supabase
           .from('messages')
-          .select('*, lead:leads(first_name, last_name, email, company, revival_score)')
+          .select('*, lead:leads(*), campaign:campaigns(id, name, playbook_type)')
           .eq('workspace_id', currentWorkspace.id)
           .eq('approval_status', 'pending')
           .order('created_at', { ascending: true }),
         supabase
           .from('messages')
-          .select('*, lead:leads(first_name, last_name, email, company, revival_score)')
+          .select('*, lead:leads(first_name, last_name, email, company, revival_score), campaign:campaigns(id, name, playbook_type)')
           .eq('workspace_id', currentWorkspace.id)
           .eq('approval_status', 'approved')
           .not('sent_at', 'is', null)
