@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckSquare, Check, X, Edit, ShieldX, ChevronLeft, ChevronRight, MessageSquare, Calendar, Trophy, ThumbsDown, Gauge, Keyboard } from 'lucide-react';
+import { CheckSquare, Check, X, Edit, ShieldX, ChevronLeft, ChevronRight, MessageSquare, Calendar, Trophy, ThumbsDown, Gauge, Keyboard, Megaphone, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { LeadContextPanel } from '@/components/LeadContextPanel';
 
 interface MessageWithLead {
   id: string;
@@ -305,7 +308,18 @@ export default function ApprovalsPage() {
                         <p className="text-sm text-muted-foreground truncate">
                           {(current as any).lead?.email} · {(current as any).lead?.company} · Score: {(current as any).lead?.revival_score}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {current.campaign && (
+                            <Link to={`/app/campaigns/${current.campaign.id}`} className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-primary/10 text-primary hover:bg-primary/20">
+                              <Megaphone className="h-3 w-3" /> {current.campaign.name}
+                            </Link>
+                          )}
+                          {current.campaign?.playbook_type && (
+                            <Badge variant="outline" className="text-[10px] capitalize">{current.campaign.playbook_type.replace('_', ' ')}</Badge>
+                          )}
+                          {(current as any).lead?.revival_bucket && (
+                            <Badge variant="secondary" className="text-[10px] capitalize">{String((current as any).lead.revival_bucket).replace('_', ' ')}</Badge>
+                          )}
                           {current.variant_label && current.variant_label !== 'A' && (
                             <Badge variant="outline" className="text-xs">Variant {current.variant_label}</Badge>
                           )}
