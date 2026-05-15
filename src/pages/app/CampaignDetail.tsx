@@ -561,12 +561,12 @@ export default function CampaignDetailPage() {
   );
 }
 
-function FunnelStat({ label, value, max }: { label: string; value: number; max?: number }) {
+function FunnelStat({ label, value, max, tone }: { label: string; value: number; max?: number; tone?: 'danger' }) {
   const pct = max && max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 100;
   return (
     <div className="space-y-1">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
+      <p className={`text-2xl font-bold tabular-nums ${tone === 'danger' ? 'text-destructive' : ''}`}>{value}</p>
       {max !== undefined && <Progress value={pct} className="h-1" />}
     </div>
   );
