@@ -131,8 +131,9 @@ export default function CampaignDetailPage() {
     const sent = messages.filter(m => m.sent_at).length;
     const opened = messages.filter(m => m.opened_at).length;
     const replied = messages.filter(m => m.replied_at).length;
+    const failed = messages.filter(m => !m.sent_at && (m.send_attempts ?? 0) > 0).length;
     const target = campaign?.lead_count ?? total;
-    return { total, approved, pending, sent, opened, replied, target };
+    return { total, approved, pending, sent, opened, replied, failed, target };
   }, [messages, campaign]);
 
   // ----- Mutations -----
@@ -248,6 +249,27 @@ export default function CampaignDetailPage() {
     await approveAll();
     // small delay so DB sees the updates before send
     setTimeout(() => sendApproved(), 400);
+  }
+
+  async function retryMessages(ids: string[]) {
+    if (!currentWorkspace || ids.length === 0) return;
+    setBusy(true);
+    toast({ title: 'Retrying...', description: `Resending ${ids.length} message${ids.length === 1 ? '' : 's'}` });
+    const { data, error } = await supabase.functions.invoke('send-messages', {
+      body: { workspace_id: currentWorkspace.id, message_ids: ids },
+    });
+    setBusy(false);
+    if (error) {
+      toast({ title: 'Retry failed', description: error.message, variant: 'destructive' });
+      return;
+    }
+    if (data?.reason === 'no_credentials') {
+      toast({ title: 'Email/SMS not configured', description: `Missing: ${(data.missing_providers || []).join(', ')}. Add them in Settings → Integrations.`, variant: 'destructive' });
+      return;
+    }
+    const failNote = data?.failed ? ` · ${data.failed} failed` : '';
+    toast({ title: 'Retry complete', description: `${data?.sent ?? 0} delivered${failNote}` });
+    fetchAll();
   }
 
   async function logActivity(eventType: string, messageId: string, leadId?: string) {
