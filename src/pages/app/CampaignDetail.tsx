@@ -12,11 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft, Send, CheckCheck, Play, Pause, Check, X, Edit, ShieldX,
-  Mail, MessageSquare, Eye, Reply, Calendar, Trophy, Sparkles, Newspaper, Building2, Gauge,
+  Mail, MessageSquare, Eye, Reply, Trophy, Sparkles, Gauge, RefreshCw, AlertTriangle,
 } from 'lucide-react';
+import { LeadContextPanel } from '@/components/LeadContextPanel';
 
 interface Campaign {
   id: string; name: string; status: string; playbook_id: string | null;
@@ -40,6 +42,7 @@ interface MessageRow {
   approval_status: string; sent_at: string | null; opened_at: string | null;
   replied_at: string | null; clicked_at: string | null; delivered_at: string | null;
   created_at: string;
+  send_error?: string | null; send_attempts?: number | null; last_attempt_at?: string | null;
   lead?: Lead;
 }
 
