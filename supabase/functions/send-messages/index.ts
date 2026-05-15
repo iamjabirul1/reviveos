@@ -127,8 +127,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update campaign status if all messages sent
-    if (sentCount > 0) {
+    // Update campaign status if all messages sent (only when scoped to a campaign)
+    if (sentCount > 0 && campaign_id) {
       const { count: remainingCount } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
