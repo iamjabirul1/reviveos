@@ -94,33 +94,36 @@ Deno.serve(async (req) => {
       const lead = msg as any;
       const channel = msg.channel || "email";
       const leadPhone = lead.leads?.phone;
-
-      // Determine if WhatsApp
       const isWhatsApp = channel === "sms" && leadPhone?.startsWith("whatsapp:");
 
+      let result: { success: boolean; error?: string };
       if (channel === "email") {
-        const result = await sendEmail(msg, lead, emailCreds, trackingBaseUrl);
-        if (result.success) {
-          await supabase.from("messages")
-            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-            .eq("id", msg.id);
-          sentCount++;
-        } else {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
-        }
+        result = await sendEmail(msg, lead, emailCreds, trackingBaseUrl);
       } else if (channel === "sms") {
         const creds = isWhatsApp ? whatsappCreds : smsCreds;
-        const result = await sendSms(msg, lead, creds, isWhatsApp);
-        if (result.success) {
-          await supabase.from("messages")
-            .update({ sent_at: new Date().toISOString(), delivered_at: new Date().toISOString() })
-            .eq("id", msg.id);
-          sentCount++;
-        } else {
-          failCount++;
-          errors.push(`Lead ${msg.lead_id}: ${result.error}`);
-        }
+        result = await sendSms(msg, lead, creds, isWhatsApp);
+      } else {
+        result = { success: false, error: `Unsupported channel: ${channel}` };
+      }
+
+      const nowIso = new Date().toISOString();
+      if (result.success) {
+        await supabase.from("messages").update({
+          sent_at: nowIso,
+          delivered_at: nowIso,
+          send_error: null,
+          last_attempt_at: nowIso,
+          send_attempts: (msg.send_attempts ?? 0) + 1,
+        }).eq("id", msg.id);
+        sentCount++;
+      } else {
+        await supabase.from("messages").update({
+          send_error: result.error ?? "Unknown error",
+          last_attempt_at: nowIso,
+          send_attempts: (msg.send_attempts ?? 0) + 1,
+        }).eq("id", msg.id);
+        failCount++;
+        errors.push(`Lead ${msg.lead_id}: ${result.error}`);
       }
     }
 
