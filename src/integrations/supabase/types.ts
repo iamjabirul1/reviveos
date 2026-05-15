@@ -290,6 +290,113 @@ export type Database = {
           },
         ]
       }
+      lead_magnet_submissions: {
+        Row: {
+          answers_json: Json
+          created_at: string
+          email: string
+          id: string
+          lead_id: string | null
+          magnet_id: string
+          name: string | null
+          phone: string | null
+          report_html: string | null
+          report_summary: string | null
+          share_slug: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          answers_json?: Json
+          created_at?: string
+          email: string
+          id?: string
+          lead_id?: string | null
+          magnet_id: string
+          name?: string | null
+          phone?: string | null
+          report_html?: string | null
+          report_summary?: string | null
+          share_slug: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          answers_json?: Json
+          created_at?: string
+          email?: string
+          id?: string
+          lead_id?: string | null
+          magnet_id?: string
+          name?: string | null
+          phone?: string | null
+          report_html?: string | null
+          report_summary?: string | null
+          share_slug?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_magnet_submissions_magnet_id_fkey"
+            columns: ["magnet_id"]
+            isOneToOne: false
+            referencedRelation: "lead_magnets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_magnets: {
+        Row: {
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          headline: string | null
+          id: string
+          is_active: boolean
+          name: string
+          questions_json: Json
+          report_prompt: string
+          slug: string
+          subhead: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          questions_json?: Json
+          report_prompt?: string
+          slug: string
+          subhead?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          questions_json?: Json
+          report_prompt?: string
+          slug?: string
+          subhead?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           best_angle: string | null
@@ -509,9 +616,12 @@ export type Database = {
           created_at: string
           delivered_at: string | null
           id: string
+          last_attempt_at: string | null
           lead_id: string
           opened_at: string | null
           replied_at: string | null
+          send_attempts: number
+          send_error: string | null
           sent_at: string | null
           subject: string | null
           variant_label: string | null
@@ -529,9 +639,12 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           id?: string
+          last_attempt_at?: string | null
           lead_id: string
           opened_at?: string | null
           replied_at?: string | null
+          send_attempts?: number
+          send_error?: string | null
           sent_at?: string | null
           subject?: string | null
           variant_label?: string | null
@@ -549,9 +662,12 @@ export type Database = {
           created_at?: string
           delivered_at?: string | null
           id?: string
+          last_attempt_at?: string | null
           lead_id?: string
           opened_at?: string | null
           replied_at?: string | null
+          send_attempts?: number
+          send_error?: string | null
           sent_at?: string | null
           subject?: string | null
           variant_label?: string | null
