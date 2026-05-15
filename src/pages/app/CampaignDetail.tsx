@@ -405,6 +405,11 @@ export default function CampaignDetailPage() {
                       <div className="flex flex-wrap gap-1">
                         <StatusBadge status={m.approval_status} />
                         {m.sent_at && <Badge variant="outline" className="text-[10px]"><Send className="h-2.5 w-2.5 mr-0.5" />sent</Badge>}
+                        {!m.sent_at && (m.send_attempts ?? 0) > 0 && (
+                          <Badge className="text-[10px] bg-destructive text-destructive-foreground" title={m.send_error ?? ''}>
+                            <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />failed
+                          </Badge>
+                        )}
                         {m.opened_at && <Badge variant="outline" className="text-[10px]"><Eye className="h-2.5 w-2.5 mr-0.5" />opened</Badge>}
                         {m.replied_at && <Badge className="text-[10px] bg-success text-success-foreground"><Reply className="h-2.5 w-2.5 mr-0.5" />replied</Badge>}
                       </div>
@@ -416,6 +421,11 @@ export default function CampaignDetailPage() {
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-1">
+                        {!m.sent_at && (m.send_attempts ?? 0) > 0 && m.approval_status === 'approved' && (
+                          <Button size="sm" variant="ghost" onClick={() => retryMessages([m.id])} disabled={busy} title="Retry send">
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                        )}
                         {m.approval_status === 'pending' && (
                           <Button size="sm" variant="ghost" onClick={() => approveMessage(m)} disabled={busy}><Check className="h-3 w-3" /></Button>
                         )}
@@ -463,7 +473,20 @@ export default function CampaignDetailPage() {
                     {openMessage.subject && <p className="font-semibold">{openMessage.subject}</p>}
                     <p className="text-sm whitespace-pre-wrap">{openMessage.body}</p>
                   </div>
+                  {!openMessage.sent_at && (openMessage.send_attempts ?? 0) > 0 && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        <strong>Delivery failed</strong> ({openMessage.send_attempts} attempt{openMessage.send_attempts === 1 ? '' : 's'}): {openMessage.send_error || 'unknown error'}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <div className="flex gap-2 flex-wrap">
+                    {!openMessage.sent_at && (openMessage.send_attempts ?? 0) > 0 && openMessage.approval_status === 'approved' && (
+                      <Button size="sm" onClick={() => retryMessages([openMessage.id])} disabled={busy}>
+                        <RefreshCw className="mr-1 h-3 w-3" /> Retry send
+                      </Button>
+                    )}
                     {openMessage.approval_status === 'pending' && (
                       <Button size="sm" onClick={() => approveMessage(openMessage)} disabled={busy}>
                         <Check className="mr-1 h-3 w-3" /> Approve
