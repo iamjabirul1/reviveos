@@ -497,7 +497,7 @@ export default function CampaignDetailPage() {
                 </TabsContent>
 
                 <TabsContent value="context" className="space-y-4 mt-4">
-                  <LeadContext lead={openMessage.lead} />
+                  <LeadContextPanel lead={openMessage.lead} />
                 </TabsContent>
               </Tabs>
             </>
