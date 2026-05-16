@@ -344,6 +344,19 @@ export default function ApprovalsPage() {
                         <p className="text-sm">{current.ai_rationale}</p>
                       </div>
                     )}
+                    {(current as any).lead && (
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="w-full justify-between border">
+                            <span className="text-xs font-medium">Lead context · CRM signals + news/events</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <LeadContextPanel lead={(current as any).lead} />
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                     <div className="border rounded-lg p-4 space-y-2">
                       <Badge variant="outline" className="capitalize">{current.channel}</Badge>
                       {editMode ? (
