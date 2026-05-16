@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield, DollarSign, Brain
+  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield, DollarSign, Brain, Sparkles
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
