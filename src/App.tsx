@@ -53,6 +53,9 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/roadmap" element={<Roadmap />} />
+                <Route path="/roadmap/r/:share" element={<RoadmapReport />} />
+                <Route path="/roadmap/:slug" element={<Roadmap />} />
                 <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                   <Route path="import" element={<ErrorBoundary><ImportPage /></ErrorBoundary>} />
