@@ -65,6 +65,7 @@ const App = () => (
                   <Route path="campaigns/:id" element={<ErrorBoundary><CampaignDetailPage /></ErrorBoundary>} />
 
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
+                  <Route path="lead-magnets" element={<ErrorBoundary><LeadMagnetsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
                   <Route path="ai-insights" element={<ErrorBoundary><AIInsightsPage /></ErrorBoundary>} />
