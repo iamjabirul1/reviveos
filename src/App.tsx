@@ -29,6 +29,9 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Discover from "./pages/Discover";
+import Roadmap from "./pages/Roadmap";
+import RoadmapReport from "./pages/RoadmapReport";
+import LeadMagnetsPage from "./pages/app/LeadMagnetsPage";
 
 const queryClient = new QueryClient();
 
