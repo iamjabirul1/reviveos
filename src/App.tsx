@@ -29,6 +29,9 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Discover from "./pages/Discover";
+import Roadmap from "./pages/Roadmap";
+import RoadmapReport from "./pages/RoadmapReport";
+import LeadMagnetsPage from "./pages/app/LeadMagnetsPage";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +53,9 @@ const App = () => (
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/roadmap" element={<Roadmap />} />
+                <Route path="/roadmap/r/:share" element={<RoadmapReport />} />
+                <Route path="/roadmap/:slug" element={<Roadmap />} />
                 <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
                   <Route path="import" element={<ErrorBoundary><ImportPage /></ErrorBoundary>} />
@@ -59,6 +65,7 @@ const App = () => (
                   <Route path="campaigns/:id" element={<ErrorBoundary><CampaignDetailPage /></ErrorBoundary>} />
 
                   <Route path="approvals" element={<ErrorBoundary><ApprovalsPage /></ErrorBoundary>} />
+                  <Route path="lead-magnets" element={<ErrorBoundary><LeadMagnetsPage /></ErrorBoundary>} />
                   <Route path="analytics" element={<ErrorBoundary><AnalyticsPage /></ErrorBoundary>} />
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
                   <Route path="ai-insights" element={<ErrorBoundary><AIInsightsPage /></ErrorBoundary>} />

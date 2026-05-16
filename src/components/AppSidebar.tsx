@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Upload, Users, BookOpen, Megaphone,
-  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield, DollarSign, Brain
+  CheckSquare, BarChart3, Settings, Zap, LogOut, Shield, DollarSign, Brain, Sparkles
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -22,6 +22,7 @@ const navItems = [
   { title: 'Playbooks', url: '/app/playbooks', icon: BookOpen },
   { title: 'Campaigns', url: '/app/campaigns', icon: Megaphone },
   { title: 'Approvals', url: '/app/approvals', icon: CheckSquare },
+  { title: 'Lead Magnets', url: '/app/lead-magnets', icon: Sparkles },
   { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
   { title: 'Revenue', url: '/app/revenue', icon: DollarSign },
   { title: 'AI Insights', url: '/app/ai-insights', icon: Brain },
