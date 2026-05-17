@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendBrevoEmail } from "../_shared/brevo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,19 +87,11 @@ Deno.serve(async (req) => {
       const ownerEmail = ownerData?.user?.email;
 
       if (ownerEmail) {
-        const resendKey = Deno.env.get("RESEND_API_KEY");
-        if (resendKey) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "ReviveOS <notifications@updates.reviveos.com>",
-              to: [ownerEmail],
-              subject: "⚠️ Your AI access has been suspended",
-              html: `
+        await sendBrevoEmail({
+          from: "ReviveOS <notifications@updates.reviveos.com>",
+          to: ownerEmail,
+          subject: "⚠️ Your AI access has been suspended",
+          html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
                   <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
                     <h1 style="font-size: 22px; color: #dc2626; margin: 0 0 12px 0;">⚠️ AI Access Suspended</h1>
@@ -133,9 +126,7 @@ Deno.serve(async (req) => {
                   </p>
                 </div>
               `,
-            }),
-          });
-        }
+        });
       }
 
       // Log the action
@@ -162,19 +153,11 @@ Deno.serve(async (req) => {
       const ownerEmail = ownerData?.user?.email;
 
       if (ownerEmail) {
-        const resendKey = Deno.env.get("RESEND_API_KEY");
-        if (resendKey) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: "ReviveOS <notifications@updates.reviveos.com>",
-              to: [ownerEmail],
-              subject: "✅ Your AI access has been restored",
-              html: `
+        await sendBrevoEmail({
+          from: "ReviveOS <notifications@updates.reviveos.com>",
+          to: ownerEmail,
+          subject: "✅ Your AI access has been restored",
+          html: `
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px;">
                   <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
                     <h1 style="font-size: 22px; color: #16a34a; margin: 0 0 12px 0;">✅ AI Access Restored</h1>
@@ -187,9 +170,7 @@ Deno.serve(async (req) => {
                   </p>
                 </div>
               `,
-            }),
-          });
-        }
+        });
       }
 
       await supabase.from("activity_logs").insert({

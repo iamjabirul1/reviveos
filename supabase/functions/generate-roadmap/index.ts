@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { sendBrevoEmail } from "../_shared/brevo.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -146,19 +147,25 @@ Be specific, no fluff. End with a single-sentence summary line prefixed exactly:
       report_html: reportHtml, report_summary: summary, status: "ready",
     }).eq("id", sub.id);
 
-    // Best-effort: invoke transactional email if available.
+    // Deliver via Brevo (best-effort).
     const origin = req.headers.get("origin") || "";
     const reportUrl = `${origin}/roadmap/r/${share}`;
     try {
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          to: email,
-          template: "roadmap-ready",
-          templateData: { name, reportUrl, magnetName: magnet.name, summary },
-          purpose: "transactional",
-          idempotency_key: `roadmap-${sub.id}`,
-        },
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+          <h1 style="font-size:22px;margin:0 0 12px">Your roadmap is ready, ${name}</h1>
+          <p style="font-size:15px;line-height:1.6;color:#4a4a4a;margin:0 0 16px">${summary || "We've built a personalized plan based on your answers."}</p>
+          <p style="margin:24px 0">
+            <a href="${reportUrl}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600">Open my roadmap</a>
+          </p>
+          <p style="font-size:12px;color:#999;margin-top:24px">Or paste this link into your browser: ${reportUrl}</p>
+        </div>`;
+      const sent = await sendBrevoEmail({
+        to: email,
+        subject: `${name.split(" ")[0]}, your custom roadmap is ready`,
+        html,
       });
+      if (!sent.success) console.warn("email send failed", sent.error);
     } catch (e) {
       console.warn("email send skipped", e);
     }
