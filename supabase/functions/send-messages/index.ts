@@ -228,7 +228,7 @@ function resolveWhatsAppCreds(integrations: Record<string, Record<string, string
 async function sendEmail(
   msg: any, lead: any, creds: EmailCreds | null, trackingBaseUrl: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!creds) return { success: false, error: "Email not configured (no Resend API key)" };
+  if (!creds) return { success: false, error: "Email not configured (no Brevo API key)" };
 
   const leadEmail = lead.leads?.email;
   if (!leadEmail) return { success: false, error: "No email address" };
@@ -236,25 +236,16 @@ async function sendEmail(
   const openPixelUrl = `${trackingBaseUrl}?mid=${msg.id}&action=open`;
   const htmlBody = convertToTrackedHtml(msg.body, msg.id, trackingBaseUrl, openPixelUrl);
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${creds.api_key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: `${creds.from_name} <${creds.from_email}>`,
-        to: [leadEmail],
-        subject: msg.subject || "Quick follow-up",
-        text: msg.body,
-        html: htmlBody,
-      }),
-    });
-
-    if (res.ok) return { success: true };
-    const errBody = await res.text();
-    return { success: false, error: `Resend error — ${errBody}` };
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : "Unknown send error" };
-  }
+  const result = await sendBrevoEmail({
+    apiKey: creds.api_key,
+    fromEmail: creds.from_email,
+    fromName: creds.from_name,
+    to: leadEmail,
+    subject: msg.subject || "Quick follow-up",
+    text: msg.body,
+    html: htmlBody,
+  });
+  return result.success ? { success: true } : { success: false, error: result.error };
 }
 
 async function sendSms(
