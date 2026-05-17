@@ -34,9 +34,9 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch workspaces: ${wsError?.message}`);
     }
 
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendKey) {
-      throw new Error("RESEND_API_KEY not configured");
+    const brevoKey = Deno.env.get("BREVO_API_KEY");
+    if (!brevoKey) {
+      throw new Error("BREVO_API_KEY not configured");
     }
 
     let emailsSent = 0;
