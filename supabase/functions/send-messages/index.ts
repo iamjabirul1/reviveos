@@ -186,16 +186,15 @@ interface SmsCreds {
 }
 
 function resolveEmailCreds(integrations: Record<string, Record<string, string>>, workspaceId?: string): EmailCreds | null {
-  const ws = integrations["resend"];
-  if (ws?.api_key) {
-    return { api_key: ws.api_key, from_email: ws.from_email || "noreply@reviveos.com", from_name: ws.from_name || "ReviveOS" };
-  }
-  // Only fall back to global env for founder's workspace
-  if (workspaceId === FOUNDER_WORKSPACE_ID) {
-    const globalKey = Deno.env.get("RESEND_API_KEY");
-    if (globalKey) {
-      return { api_key: globalKey, from_email: "noreply@reviveos.com", from_name: "ReviveOS" };
-    }
+  // Brevo is the default global provider for all workspaces.
+  const brevoKey = Deno.env.get("BREVO_API_KEY");
+  if (brevoKey) {
+    const ws = integrations["resend"] || integrations["brevo"] || {};
+    return {
+      api_key: brevoKey,
+      from_email: ws.from_email || Deno.env.get("BREVO_SENDER_EMAIL") || "noreply@reviveos.com",
+      from_name: ws.from_name || Deno.env.get("BREVO_SENDER_NAME") || "ReviveOS",
+    };
   }
   return null;
 }
