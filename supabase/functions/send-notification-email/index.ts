@@ -188,33 +188,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Send via Resend
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendKey) {
-      return new Response(JSON.stringify({ error: "Email service not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const resendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "ReviveOS <notifications@updates.reviveos.com>",
-        to: [userEmail],
-        subject: emailContent.subject,
-        html: emailContent.html,
-      }),
+    // Send via Brevo
+    const sent = await sendBrevoEmail({
+      from: "ReviveOS <notifications@updates.reviveos.com>",
+      to: userEmail,
+      subject: emailContent.subject,
+      html: emailContent.html,
     });
 
-    if (!resendRes.ok) {
-      const errText = await resendRes.text();
-      console.error("Resend error:", errText);
-      return new Response(JSON.stringify({ error: "Failed to send email", detail: errText }), {
+    if (!sent.success) {
+      console.error("Brevo error:", sent.error);
+      return new Response(JSON.stringify({ error: "Failed to send email", detail: sent.error }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
