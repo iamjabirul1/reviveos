@@ -136,23 +136,15 @@ Deno.serve(async (req) => {
         </div>
       `;
 
-      const resendRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${resendKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "ReviveOS <notifications@updates.reviveos.com>",
-          to: [email],
-          subject: "⚠️ Weekly Plan Limit Report",
-          html,
-        }),
+      const sent = await sendBrevoEmail({
+        from: "ReviveOS <notifications@updates.reviveos.com>",
+        to: email,
+        subject: "⚠️ Weekly Plan Limit Report",
+        html,
       });
 
-      if (resendRes.ok) {
+      if (sent.success) {
         emailsSent++;
-        // Log the notification
         await supabase.from("activity_logs").insert({
           workspace_id: ws.id,
           user_id: ws.owner_user_id,
@@ -160,7 +152,7 @@ Deno.serve(async (req) => {
           payload_json: { items: usageItems },
         });
       } else {
-        console.error(`Failed to send to ${email}:`, await resendRes.text());
+        console.error(`Failed to send to ${email}:`, sent.error);
       }
     }
 
