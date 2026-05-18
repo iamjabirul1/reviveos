@@ -15,7 +15,10 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const plan = searchParams.get('plan');
+  const loginHref = plan ? `/login?plan=${plan}` : '/login';
 
   const [signupComplete, setSignupComplete] = useState(false);
 
