@@ -72,12 +72,12 @@ export default function PaywallOverlay({ recoverableRevenue, avgDealSize, leadCo
 
         {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/signup?plan=growth">
+          <Link to="/checkout?plan=growth">
             <Button size="lg" className="h-14 text-lg px-8 shadow-lg">
               <Sparkles className="h-5 w-5 mr-2" /> Unlock My Pipeline — $599/mo
             </Button>
           </Link>
-          <Link to="/signup?plan=starter">
+          <Link to="/checkout?plan=starter">
             <Button variant="outline" size="lg" className="h-14 px-8">
               Start with Starter — $299/mo <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
