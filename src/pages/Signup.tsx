@@ -92,7 +92,7 @@ export default function Signup() {
             </Button>
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline">Log in</Link>
+              <Link to={loginHref} className="text-primary hover:underline">Log in</Link>
             </p>
           </CardFooter>
         </form>
