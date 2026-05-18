@@ -53,7 +53,7 @@ export default function Signup() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
-            <Link to="/login" className="text-sm text-primary hover:underline">Back to login</Link>
+            <Link to={loginHref} className="text-sm text-primary hover:underline">Continue to login</Link>
           </CardFooter>
         </Card>
       </div>
