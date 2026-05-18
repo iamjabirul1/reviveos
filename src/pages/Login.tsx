@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ export default function Login() {
   const [resetSent, setResetSent] = useState(false);
   const { signIn, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,7 +27,11 @@ export default function Login() {
     if (error) {
       toast({ title: 'Login failed', description: error.message, variant: 'destructive' });
     } else {
-      navigate('/app');
+      const plan = searchParams.get('plan');
+      const next = searchParams.get('next');
+      if (next) navigate(next);
+      else if (plan) navigate(`/checkout?plan=${plan}`);
+      else navigate('/app');
     }
   };
 

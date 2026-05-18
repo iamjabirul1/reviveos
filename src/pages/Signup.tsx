@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,10 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const plan = searchParams.get('plan');
+  const loginHref = plan ? `/login?plan=${plan}` : '/login';
 
   const [signupComplete, setSignupComplete] = useState(false);
 
@@ -50,7 +53,7 @@ export default function Signup() {
             </CardDescription>
           </CardHeader>
           <CardFooter className="justify-center">
-            <Link to="/login" className="text-sm text-primary hover:underline">Back to login</Link>
+            <Link to={loginHref} className="text-sm text-primary hover:underline">Continue to login</Link>
           </CardFooter>
         </Card>
       </div>
@@ -89,7 +92,7 @@ export default function Signup() {
             </Button>
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="text-primary hover:underline">Log in</Link>
+              <Link to={loginHref} className="text-primary hover:underline">Log in</Link>
             </p>
           </CardFooter>
         </form>

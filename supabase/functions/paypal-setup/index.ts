@@ -78,6 +78,15 @@ async function createPlan(
   });
   const data = await res.json();
   if (!res.ok) throw new Error(`Create plan failed: ${JSON.stringify(data)}`);
+  // Plans are created in CREATED state — must be activated to accept subscriptions
+  const actRes = await fetch(`${PAYPAL_API}/v1/billing/plans/${data.id}/activate`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!actRes.ok && actRes.status !== 204) {
+    const actErr = await actRes.text();
+    console.warn(`Plan ${data.id} activate failed (continuing): ${actErr}`);
+  }
   return data.id;
 }
 

@@ -32,6 +32,7 @@ import Discover from "./pages/Discover";
 import Roadmap from "./pages/Roadmap";
 import RoadmapReport from "./pages/RoadmapReport";
 import LeadMagnetsPage from "./pages/app/LeadMagnetsPage";
+import Checkout from "./pages/Checkout";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/checkout" element={<Checkout />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
