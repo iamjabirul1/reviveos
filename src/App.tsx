@@ -33,6 +33,7 @@ import Roadmap from "./pages/Roadmap";
 import RoadmapReport from "./pages/RoadmapReport";
 import LeadMagnetsPage from "./pages/app/LeadMagnetsPage";
 import Checkout from "./pages/Checkout";
+import ManageSubscription from "./pages/app/ManageSubscription";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                   <Route path="revenue" element={<ErrorBoundary><RevenuePage /></ErrorBoundary>} />
                   <Route path="ai-insights" element={<ErrorBoundary><AIInsightsPage /></ErrorBoundary>} />
                   <Route path="settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
+                  <Route path="billing" element={<ErrorBoundary><ManageSubscription /></ErrorBoundary>} />
                   <Route path="admin" element={<ProtectedRoute requireAdmin><ErrorBoundary><AdminDashboard /></ErrorBoundary></ProtectedRoute>} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
